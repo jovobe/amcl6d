@@ -1,13 +1,9 @@
-
 SRC = src/
 OBJ = obj/
-
+BIN = bin/
 
 main: logger
-	g++ $(SRC)main.cpp $(OBJ)Logger.o -o run
+	g++ $(SRC)main.cpp $(OBJ)Logger.o -o $(BIN)run
 
-cam: 
-
-logger: 
+logger:
 	g++ $(SRC)Logger.cpp -c -o $(OBJ)Logger.o
-
