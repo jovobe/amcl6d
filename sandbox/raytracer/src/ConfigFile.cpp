@@ -2,7 +2,6 @@
  * ConfigFile
  * @description a config file for the camera parameters
  * @author Sebastian Höffner
- * @version 0.1
  * @created 2014-08-08
  * @lastModification 2014-08-08
  * @file ConfigFile.cpp
