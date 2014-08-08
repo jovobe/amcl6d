@@ -3,7 +3,7 @@
  *
  *  Created on: 29.09.2010
  *  Author: Denis Meyer, Thomas Wiemann
- *  Modified on: 06.08.2014
+ *  Modified on: 08.08.2014
  *  Author: Sebastian Höffner
  */
 
@@ -11,6 +11,8 @@
 #define CAMERAPARAMETERS_H_
 
 #include <cmath>
+#include "MatrixMath.hpp"
+#include "Logger.h"
 #include "ConfigFile.h"
 
 class CameraParameters

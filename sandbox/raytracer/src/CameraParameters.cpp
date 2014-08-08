@@ -3,13 +3,11 @@
  *
  *  Created on: 29.09.2010
  *      Author: Denis Meyer, Thomas Wiemann
- *    Modified: 06.08.2014
+ *    Modified: 08.08.2014
  *      Author: Sebastian Höffner
  */
 
 #include "CameraParameters.h"
-#include "MatrixMath.hpp"
-#include "Logger.h"
 
 const bool CameraParameters::output = true;
 
