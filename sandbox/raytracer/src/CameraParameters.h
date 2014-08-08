@@ -26,9 +26,8 @@ public:
 	/**
 	 * Constructor
 	 * @param cf Configfile
-	 * @param section Section
 	 */
-	CameraParameters(ConfigFile* cf, int section);
+	CameraParameters(ConfigFile* cf);
 
 	/**
 	 * Copy Constructor
@@ -61,9 +60,8 @@ private:
 	/**
 	 * Parses the given Configfile
 	 * @param cf Configfile
-	 * @param section Section
 	 */
-	void parseConfigFile(ConfigFile* cf, int section);
+	void parseConfigFile(ConfigFile* cf);
 
 	static const bool output;
 };

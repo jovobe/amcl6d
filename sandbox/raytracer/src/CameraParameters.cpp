@@ -36,9 +36,9 @@ CameraParameters::CameraParameters() {
 	M4identity( m_matrixCamOrientation);
 }
 
-CameraParameters::CameraParameters(ConfigFile* cf, int section) {
+CameraParameters::CameraParameters(ConfigFile* cf) {
 	Logger::instance()->log("CameraParameters - constructor with config file");
-	parseConfigFile(cf, section);
+	parseConfigFile(cf);
 	// M4identity(m_matrixCamOrientation); // DEBUG ONLY
 }
 
@@ -66,40 +66,37 @@ CameraParameters::~CameraParameters() {
 	Logger::instance()->log("~CameraParameters");
 }
 
-void CameraParameters::parseConfigFile(ConfigFile* cf, int section) {
+void CameraParameters::parseConfigFile(ConfigFile* cf) {
 	Logger::instance()->log("parseConfigFile - start");
 	// Get camera parameters
-	m_minAngleH = cf->ReadFloat("minAngleHorizontal", 80);
-	m_maxAngleH = cf->ReadFloat("maxAngleHorizontal", 110);
-	m_minAngleV = cf->ReadFloat("minAngleVertical", 80);
-	m_maxAngleV = cf->ReadFloat("maxAngleVertical", 110);
-	m_resolutionH = cf->ReadInt("resolutionHorizontal", 40);
-	m_resolutionV = cf->ReadInt("resolutionVertical", 40);
+	m_minAngleH = cf->getAsFloat("minAngleHorizontal", 80);
+	m_maxAngleH = cf->getAsFloat("maxAngleHorizontal", 110);
+	m_minAngleV = cf->getAsFloat("minAngleVertical", 80);
+	m_maxAngleV = cf->getAsFloat("maxAngleVertical", 110);
+	m_resolutionH = cf->getAsInt("resolutionHorizontal", 40);
+	m_resolutionV = cf->getAsInt("resolutionVertical", 40);
 
-	m_focalLength = cf->ReadFloat("focalLength", 0.4);
-	m_deviceType = cf->ReadFloat("deviceType", 0);
+	m_focalLength = cf->getAsFloat("focalLength", 0.4);
+	m_deviceType = cf->getAsFloat("deviceType", 0);
 
-	m_minRange = cf->ReadFloat("minRange", 0);
-	m_maxRange = cf->ReadFloat("maxRange", 8);
+	m_minRange = cf->getAsFloat("minRange", 0);
+	m_maxRange = cf->getAsFloat("maxRange", 8);
 
 	m_plane_minY = -tan(m_minAngleV * M_PI / 180) * m_focalLength;
-	m_plane_maxY = tan(m_maxAngleV * M_PI / 180) * m_focalLength;
+	m_plane_maxY =  tan(m_maxAngleV * M_PI / 180) * m_focalLength;
 	m_plane_minZ = -tan(m_minAngleH * M_PI / 180) * m_focalLength;
-	m_plane_maxZ = tan(m_maxAngleH * M_PI / 180) * m_focalLength;
+	m_plane_maxZ =  tan(m_maxAngleH * M_PI / 180) * m_focalLength;
 
 	// Get camera position
 	double pose[3];
 	double orientation[3];
 
-	pose[0] = cf->ReadTupleLength("camPosition", 0, 0.0);
-	pose[1] = cf->ReadTupleLength("camPosition", 1, 0.0);
-	pose[2] = cf->ReadTupleLength("camPosition", 2, 0.0);
-	orientation[0] = cf->ReadTupleLength("camOrientation", 0, 0.0)
-			* M_PI / 180;
-	orientation[1] = cf->ReadTupleLength("camOrientation", 1, 0.0)
-			* M_PI / 180;
-	orientation[2] = cf->ReadTupleLength("camOrientation", 2, 0.0)
-			* M_PI / 180;
+	pose[0] = cf->getVecAsFloat("camPosition", 0, 0.0);
+	pose[1] = cf->getVecAsFloat("camPosition", 1, 0.0);
+	pose[2] = cf->getVecAsFloat("camPosition", 2, 0.0);
+	orientation[0] = cf->getVecAsFloat("camOrientation", 0, 0.0) * M_PI / 180;
+	orientation[1] = cf->getVecAsFloat("camOrientation", 1, 0.0) * M_PI / 180;
+	orientation[2] = cf->getVecAsFloat("camOrientation", 2, 0.0) * M_PI / 180;
 
 	// Convert to matrix
 	EulerToMatrix4(pose, orientation, m_matrixCamOrientation);
