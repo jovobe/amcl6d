@@ -3,6 +3,8 @@
  *
  *  Created on: 06.01.2011
  *      Author: Thomas Wiemann
+ *  Modified:   10.08.2014
+ *      Author: Sebastian Höffner
  */
 
 #ifndef CGALRAYTRACER_H_
@@ -13,14 +15,18 @@
 #include <CGAL/AABB_triangle_primitive.h>
 #include <CGAL/Simple_cartesian.h>
 
-#include <libplayercore/playercore.h>
-#include <libplayercommon/error.h>
-#include <model3d_interface.h>
-
 #include <list>
 #include <vector>
+#include <limits>
+
+#include "MatrixMath.hpp"
+#include "Logger.h"
 
 #include "CameraParameters.h"
+#include "polymap/PolyMap.h"
+#include "polymap/Face.h"
+#include "polymap/Vertex.h"
+
 
 typedef CGAL::Simple_cartesian<double> K;
 typedef CGAL::Point_3<K> CPoint;
@@ -49,7 +55,7 @@ typedef std::list<ObjectAndPrimitiveID>::iterator ObjectAndPrimitiveIDIterator;
 
 class CGALRaytracer {
 public:
-	CGALRaytracer(player_model3d_data_t *map, CameraParameters* camParams);
+	CGALRaytracer(PolyMap *map, CameraParameters* camParams);
 	void simulatePointCloud(double* matrix, double** &points, int &n_points);
 
 	virtual ~CGALRaytracer();

@@ -3,38 +3,37 @@
  *
  *  Created on: 06.01.2011
  *      Author: Thomas Wiemann
+ *  Modified:   10.08.2014
+ *      Author: Sebastian Höffner
  */
-
-#include <limits>
+ 
 #include "CGALRaytracer.h"
-#include "MatrixMath.hpp"
-#include "Logger.h"
 
 using std::numeric_limits;
 
-CGALRaytracer::CGALRaytracer(player_model3d_data_t *map,
+CGALRaytracer::CGALRaytracer(PolyMap *map,
 		CameraParameters* camParams) {
 	Logger::instance()->setPrefix("Log ----- ");
 	Logger::instance()->setPostfix("");
 
 	// Setup a list of triangles
-	size_t triangle_count = map->geom_count;
-	Logger::instance()->logX("si", "CGALRaytracer::CGALRaytracer - map->geom_count = ", triangle_count);
+	size_t triangle_count = map->face_count();
+	Logger::instance()->logX("si", "CGALRaytracer::CGALRaytracer - map->face_count() = ", triangle_count);
 	K kernel;
 
 	for (size_t i = 0; i < triangle_count; i++) {
-		// Get current polygon
-		player_geom_entity e = map->geom[i];
+		// Get current face
+		Face e = map->get_face(i);
 
 		// Check if it is a triangle
-		if (e.points_count != 3) {
+		if (e.vertex_count() != 3) {
 			Logger::instance()->log(
 					"CGALRaytracer: Entity is not a triangle. Skipping polygon.");
 		} else {
 			// Setup CGAL triangle and store it in list
-			Point a(e.points[0].px, e.points[0].py, e.points[0].pz);
-			Point b(e.points[1].px, e.points[1].py, e.points[1].pz);
-			Point c(e.points[2].px, e.points[2].py, e.points[2].pz);
+			Point a(e.get_vertex(0)->get_value("x"), e.get_vertex(0)->get_value("y"), e.get_vertex(0)->get_value("z"));
+			Point b(e.get_vertex(1)->get_value("x"), e.get_vertex(1)->get_value("y"), e.get_vertex(1)->get_value("z"));
+			Point c(e.get_vertex(2)->get_value("x"), e.get_vertex(2)->get_value("y"), e.get_vertex(2)->get_value("z"));
 
 			Triangle tri(a, b, c);
 
