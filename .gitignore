@@ -1,4 +1,5 @@
-*/bin/*
-*/obj/*
-.bat
-.sh
+*.bat
+*.sh
+sandbox/raytracer/bin/*
+sandbox/raytracer/obj/*
+log.txt
