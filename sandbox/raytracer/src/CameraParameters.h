@@ -18,7 +18,7 @@
 class CameraParameters
 {
 public:
-        /**
+    /**
 	 * Default Constructor
 	 */
 	CameraParameters();
