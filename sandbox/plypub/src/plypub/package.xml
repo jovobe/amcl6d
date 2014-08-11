@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>ply_message</name>
-  <version>1.0.0</version>
-  <description>The ply_message package publishes a ply-file as a point cloud to visualize it with rviz.</description>
+  <name>plypub</name>
+  <version>0.1.0</version>
+  <description>The plypub package publishes a ply-file as a point cloud to visualize it with rviz.</description>
 
   <maintainer email="shoeffner@uos.de">Sebastian Höffner</maintainer>
 
