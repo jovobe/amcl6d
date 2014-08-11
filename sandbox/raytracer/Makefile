@@ -3,7 +3,7 @@ OBJ = obj/
 BIN = bin/
 
 main: raytracer logger camparam cfgfile polymap
-	g++ $(SRC)main.cpp $(OBJ)Logger.o $(OBJ)ConfigFile.o $(OBJ)CameraParameters.o $(OBJ)PolyMap.o $(OBJ)CGALRaytracer.o $(OBJ)Vertex.o $(OBJ)Face.o -o $(BIN)run -lboost_system -lCGAL
+	g++ $(SRC)main.cpp $(OBJ)Logger.o $(OBJ)ConfigFile.o $(OBJ)CameraParameters.o $(OBJ)PolyMap.o $(OBJ)CGALRaytracer.o $(OBJ)Vertex.o $(OBJ)Face.o -o $(BIN)run -lboost_system -lCGAL -frounding-math
 	
 logger:
 	g++ $(SRC)Logger.cpp -c -o $(OBJ)Logger.o
