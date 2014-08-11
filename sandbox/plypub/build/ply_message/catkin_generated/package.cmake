@@ -1,0 +1,7 @@
+set(_CATKIN_CURRENT_PACKAGE "ply_message")
+set(ply_message_MAINTAINER "Sebastian Höffner <shoeffner@uos.de>")
+set(ply_message_DEPRECATED "")
+set(ply_message_VERSION "1.0.0")
+set(ply_message_BUILD_DEPENDS "roscpp" "sensor_msgs" "std_msgs" "tf")
+set(ply_message_RUN_DEPENDS "roscpp" "sensor_msgs" "std_msgs" "tf")
+set(ply_message_BUILDTOOL_DEPENDS "catkin")

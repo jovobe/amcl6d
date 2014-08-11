@@ -1,0 +1,27 @@
+cmake_minimum_required(VERSION 2.8.3)
+project(ply_message)
+
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  sensor_msgs
+  std_msgs
+  tf
+)
+
+catkin_package(
+#  INCLUDE_DIRS include
+#  LIBRARIES ply_message
+#  CATKIN_DEPENDS roscpp sensor_msgs std_msgs tf
+#  DEPENDS system_lib
+)
+
+include_directories(
+  ${catkin_INCLUDE_DIRS}
+)
+
+include_directories(include ${catkin_INCLUDE_DIRS})
+include_directories(include /opt/ros/hydro/include)
+add_executable(plymap src/ply_publisher.cpp)
+target_link_libraries(plymap ${catkin_LIBRARIES})
+
+
