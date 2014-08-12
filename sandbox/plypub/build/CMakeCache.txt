@@ -302,6 +302,12 @@ ply_message_BINARY_DIR:STATIC=/home/student/s/shoeffner/thesis/amcl6d/sandbox/pl
 //Value Computed by CMake
 ply_message_SOURCE_DIR:STATIC=/home/student/s/shoeffner/thesis/amcl6d/sandbox/plypub/src/ply_message
 
+//Value Computed by CMake
+plypub_BINARY_DIR:STATIC=/home/student/s/shoeffner/thesis/amcl6d/sandbox/plypub/build/plypub
+
+//Value Computed by CMake
+plypub_SOURCE_DIR:STATIC=/home/student/s/shoeffner/thesis/amcl6d/sandbox/plypub/src/plypub
+
 //The directory containing a CMake configuration file for rosconsole.
 rosconsole_DIR:PATH=/opt/ros/hydro/share/rosconsole/cmake
 

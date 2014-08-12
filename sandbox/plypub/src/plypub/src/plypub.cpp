@@ -1,53 +1,61 @@
 #include "ros/ros.h"
 #include "sensor_msgs/PointCloud.h"
 #include "std_msgs/String.h"
+#include <tf/transform_broadcaster.h>
+#include <math.h>
 
 #include <iostream>
 
 int main(int argc, char** args)
 {
-	std::string node_name = "ply_map";
-	int maximum_msg_size = 1000;
+  // meta data
+  std::string node_name = "plypub";
+  int maximum_msg_size = 1000;
+  
+  // initialize
+  ros::init(argc, args, node_name);
 
-	ros::init(argc, args, node_name);
+  // init node handle and publisher
+  ros::NodeHandle node_handle;
+  ros::Publisher publisher = node_handle.advertise<sensor_msgs::PointCloud>(node_name, maximum_msg_size);
+	
+  // init tranform and its broadcaster
+  tf::TransformBroadcaster tf_broadcaster;
+  tf::Transform transform;
 
-	ros::NodeHandle node_handle;
+  // set loop rate
+  ros::Rate loop_rate(3000);
 	
-    ros::Publisher publisher = node_handle.advertise<sensor_msgs::PointCloud>(node_name, maximum_msg_size);
-//	ros::Publisher publisher = node_handle.advertise<std_msgs::String>(node_name, maximum_msg_size);
-	
-    ros::Rate loop_rate(3000);
-	
-    // prepare point cloud
-    sensor_msgs::PointCloud point_cloud;
-//    point_cloud.header = ????
-    point_cloud.points.resize(2);
-    for(int i = 0; i < point_cloud.points.size(); i++)
-    {
-        point_cloud.points[i].x = i;
-        point_cloud.points[i].y = 2*i;
-        point_cloud.points[i].z = 0;
-    }
 
+  // prepare point cloud
+  sensor_msgs::PointCloud point_cloud;
+  point_cloud.header.frame_id = "map";
+  point_cloud.points.resize(200);
+  for(int i = 0; i < point_cloud.points.size(); i++)
+  {
+    point_cloud.points[i].x = (i-100.0)/200.0;
+    point_cloud.points[i].y = sin((i-100.0)/200.0);
+    point_cloud.points[i].z = cos((i-100.0)/200.0);
+  }
+
+  // set transformation
+  transform.setOrigin(tf::Vector3(0,0,0));
+  transform.setRotation(tf::Quaternion(0,0,0));
+
+  // publish and broadcast
+  while(ros::ok()) 
+  {
+    // broadcast tranform
+    tf_broadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "map"));
 
     // publish point cloud
-	while(ros::ok()) 
-	{
-//		std_msgs::String text_msg;
-//        text_msg.data = "hello";
-//        ROS_INFO("%s", text_msg.data.c_str());
+    publisher.publish(point_cloud);
 
-
-
-
-
-        publisher.publish(point_cloud);
-
-		ros::spinOnce();
-		loop_rate.sleep();
-	}
-	return 0;
-
+    // spin and sleep
+    ros::spinOnce();
+    loop_rate.sleep();
+  }
+  return 0;
 }
 /*
 
