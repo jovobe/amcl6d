@@ -17,10 +17,13 @@ catkin_package(
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  include ${catkin_INCLUDE_DIRS}
 )
 
-include_directories(include ${catkin_INCLUDE_DIRS})
+add_library( polymap SHARED IMPORTED )
+set_target_properties(polymap PROPERTIES IMPORTED_LOCATION "/home/student/s/shoeffner/thesis/amcl6d/sandbox/raytracer/lib/polymap.a")
+
 add_executable(plypub src/plypub.cpp)
-target_link_libraries(plypub ${catkin_LIBRARIES})
+target_link_libraries(plypub ${catkin_LIBRARIES} polymap)
 
 

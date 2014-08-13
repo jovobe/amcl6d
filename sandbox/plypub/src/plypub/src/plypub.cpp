@@ -1,8 +1,7 @@
 #include "ros/ros.h"
 #include "sensor_msgs/PointCloud.h"
-#include "std_msgs/String.h"
-#include <tf/transform_broadcaster.h>
 #include <math.h>
+#include "polymap/PolyMap.h"
 
 #include <iostream>
 
@@ -17,37 +16,34 @@ int main(int argc, char** args)
 
   // init node handle and publisher
   ros::NodeHandle node_handle;
-  ros::Publisher publisher = node_handle.advertise<sensor_msgs::PointCloud>(node_name, maximum_msg_size);
-	
-  // init tranform and its broadcaster
-  tf::TransformBroadcaster tf_broadcaster;
-  tf::Transform transform;
-
+  ros::Publisher publisher = node_handle.advertise<sensor_msgs::PointCloud>(node_name, maximum_msg_size, true);
   // set loop rate
   ros::Rate loop_rate(3000);
 	
 
-  // prepare point cloud
+  // load map
+  PolyMap* map = new PolyMap("/home/student/s/shoeffner/thesis/amcl6d/sandbox/maps/pringlescan.ply");
+
+  // prepare mesh
   sensor_msgs::PointCloud point_cloud;
   point_cloud.header.frame_id = "map";
-  point_cloud.points.resize(200);
-  for(int i = 0; i < point_cloud.points.size(); i++)
-  {
-    point_cloud.points[i].x = (i-100.0)/200.0;
-    point_cloud.points[i].y = sin((i-100.0)/200.0);
-    point_cloud.points[i].z = cos((i-100.0)/200.0);
-  }
+  point_cloud.points.resize(map->face_count()*3);
 
-  // set transformation
-  transform.setOrigin(tf::Vector3(0,0,0));
-  transform.setRotation(tf::Quaternion(0,0,0));
+
+  for(int i = 0; i < point_cloud.points.size()/3; ++i)
+  {
+    Face face = map->get_face(i);
+    for(int j = 0; j < 3; ++j)
+    {
+      point_cloud.points[i*3+j].x = face.get_vertex(j)->get_value("x");
+      point_cloud.points[i*3+j].y = face.get_vertex(j)->get_value("y");
+      point_cloud.points[i*3+j].z = face.get_vertex(j)->get_value("z");
+    }
+  }
 
   // publish and broadcast
   while(ros::ok()) 
   {
-    // broadcast tranform
-    tf_broadcaster.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "map"));
-
     // publish point cloud
     publisher.publish(point_cloud);
 
