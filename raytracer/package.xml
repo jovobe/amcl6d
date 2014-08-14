@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package>
+  <name>GALRaytracer</name>
+  <version>1.0.0</version>
+  <description>The raytracer package</description>
+
+  <maintainer email="shoeffner@uos.de">Sebastian Höffner</maintainer>
+ 
+  <license>BSD</license>
+
+  <!-- <url type="website">http://wiki.ros.org/raytracer</url> -->
+ 
+  <author email="twiemann@uos.de">Thomas Wiemann</author>
+  <author email="shoeffner@uos.de">Sebastian Höffner</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+</package>

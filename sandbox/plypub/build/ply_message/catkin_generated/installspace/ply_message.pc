@@ -1,8 +1,0 @@
-prefix=/home/student/s/shoeffner/thesis/amcl6d/sandbox/plypub/install
-
-Name: ply_message
-Description: Description of ply_message
-Version: 1.0.0
-Cflags: 
-Libs: -L/home/student/s/shoeffner/thesis/amcl6d/sandbox/plypub/install/lib 
-Requires: 
