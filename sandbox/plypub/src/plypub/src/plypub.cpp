@@ -2,55 +2,107 @@
 #include "sensor_msgs/PointCloud.h"
 #include <math.h>
 #include "polymap/PolyMap.h"
-
+#include "CGALRaytracer.h"
+#include "CameraParemeters.h"
 #include <iostream>
+
+void load_map(sensor_msgs::PointCloud* point_cloud, PolyMap* map)
+{
+    point_cloud->header.frame_id = "map";
+    point_cloud->points.resize(map->vertex_count());
+
+    for(int i = 0; i < point_cloud->points.size(); ++i)
+    {
+        Vertex vertex = map->get_vertex(i);
+        point_cloud->points[i].x = vertex.get_value("x");
+        point_cloud->points[i].y = vertex.get_value("y");
+        point_cloud->points[i].z = vertex.get_value("z");
+    }
+
+}
+
+void prepare_rt_pcl(sensor_msgs::PointCloud* point_cloud, double** points, int size)
+{
+    raytrace->points.resize(size);
+
+    for(int i = 0; i < point_cloud->points.size(); ++i)
+    {
+        point_cloud->points[i].x = points[i][0];
+        point_cloud->points[i].y = points[i][1];
+        point_cloud->points[i].z = points[i][2];
+    }
+}
+
+void set_zero(double* d_arr, int size)
+{
+    for(int i = 0; i < size; ++i)
+    {
+        d_arr[i] = 0;
+    }
+}
 
 int main(int argc, char** args)
 {
   // meta data
   std::string node_name = "plypub";
+  std::string map_topic = "map";
+  std::string ray_topic = "raytrace";
   int maximum_msg_size = 1000;
   
-  // initialize
+  // initialize program
   ros::init(argc, args, node_name);
 
-  // init node handle and publisher
-  ros::NodeHandle node_handle;
-  ros::Publisher publisher = node_handle.advertise<sensor_msgs::PointCloud>(node_name, maximum_msg_size, true);
-  // set loop rate
-  ros::Rate loop_rate(3000);
-	
+  // init node handles and publishers
+  ros::NodeHandle map_node_handle;
+  ros::Publisher map_publisher = map_node_handle.advertise<sensor_msgs::PointCloud>(map_topic, maximum_msg_size, true);
+  ros::NodeHandle ray_node_handle;
+  ros::Publisher ray_publisher = ray_node_handle.advertise<sensor_msgs::PointCloud>(ray_topic, maximum_msg_size);
 
-  // load map
+  // set loop rate
+  ros::Rate loop_rate(1000/30); // 30 fps
+
+  // init map
   PolyMap* map = new PolyMap("/home/student/s/shoeffner/thesis/amcl6d/sandbox/maps/pringlescan.ply");
 
-  // prepare mesh
-  sensor_msgs::PointCloud point_cloud;
-  point_cloud.header.frame_id = "map";
-  point_cloud.points.resize(map->face_count()*3);
+  // prepare map mesh
+  sensor_msgs::PointCloud map_cloud;
+  load_map(&map_cloud, map);
 
-
-  for(int i = 0; i < point_cloud.points.size()/3; ++i)
-  {
-    Face face = map->get_face(i);
-    for(int j = 0; j < 3; ++j)
-    {
-      point_cloud.points[i*3+j].x = face.get_vertex(j)->get_value("x");
-      point_cloud.points[i*3+j].y = face.get_vertex(j)->get_value("y");
-      point_cloud.points[i*3+j].z = face.get_vertex(j)->get_value("z");
-    }
-  }
+  // prepare raytracer
+  ConfigFile* cfg_file = new ConfigFile("/home/student/s/shoeffner/thesis/amcl6d/sandbox/raytracer/cameraparameters.cfg");
+  CameraParameters* cam_params = new CameraParameters(cfg_file);
+  CGALRaytracer* raytracer = new CGALRaytracer(map, cam_params);
+  sensor_msgs::PointCloud raytrace;
+  raytrace->header.frame_id = "raytrace";
+  double matrix[16];
+  double** points;
+  int npoints = 0;
 
   // publish and broadcast
   while(ros::ok()) 
   {
-    // publish point cloud
-    publisher.publish(point_cloud);
+    // publish map
+    map_publisher.publish(map_cloud);
+
+    // do a raytrace and publish the point cloud
+    set_zero(matrix, 16);
+    // raytracing
+    raytracer->simulatePointCloud(matrix, points, npoints);
+    // prepare point cloud
+    prepare_rt_pcl(points, &raytrace, *npoints);
+    // publish raytrace
+    ray_publisher.publish(raytrace);
 
     // spin and sleep
     ros::spinOnce();
     loop_rate.sleep();
   }
+
+  delete raytracer;
+  delete cam_params;
+  delete cfg_file;
+  delete map;
+
   return 0;
 }
 /*
