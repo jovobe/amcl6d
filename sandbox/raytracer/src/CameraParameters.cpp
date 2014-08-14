@@ -118,5 +118,7 @@ void CameraParameters::parseConfigFile(ConfigFile* cf) {
 
 	Logger::instance()->log("Matrix Cam Orientation: ");
 	Logger::instance()->log(m_matrixCamOrientation, 4, 4);
-	Logger::instance()->log("parseConfigFile - end");
+  Logger::instance()->log("Matrix pose: ");
+  Logger::instance()->log(pose, 4, 4);
+  Logger::instance()->log("parseConfigFile - end");
 }

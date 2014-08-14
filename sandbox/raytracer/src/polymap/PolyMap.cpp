@@ -3,6 +3,7 @@
  *
  *  Created on: 10.08.2014
  *      Author: Sebastian Höffner
+ *    Modified: 14.08.2014
  */
 
 #include "PolyMap.h"
@@ -25,17 +26,32 @@ int PolyMap::face_count()
     return m_facecount;
 }
 
+int PolyMap::vertex_count()
+{
+    return m_vertexcount;
+}
+
 Face PolyMap::get_face(int index)
 {
     if(index < 0 || index > m_facecount)
     {
-        Logger::instance()->logX("is", index, "out of bounds!");
+        Logger::instance()->logX("is", index, "out of bounds in PolyMap::get_face(int)");
         // ugly workaround
         return m_faces.at(0);
     }
     return m_faces.at(index);
 }
-    
+ 
+Vertex PolyMap::get_vertex(int index)
+{
+  if(index < 0 || index > m_vertexcount)
+  {
+    Logger::instance()->logX("is", index, "out of bounds in PolyMap::get_vertex(int)");
+    return m_vertices.at(0);
+  }
+  return m_vertices.at(index);
+}
+
 void PolyMap::load_file(std::string fn)
 {
     m_filename = fn;

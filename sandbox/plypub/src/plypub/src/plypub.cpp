@@ -3,7 +3,7 @@
 #include <math.h>
 #include "polymap/PolyMap.h"
 #include "CGALRaytracer.h"
-#include "CameraParemeters.h"
+#include "CameraParameters.h"
 #include <iostream>
 
 void load_map(sensor_msgs::PointCloud* point_cloud, PolyMap* map)
@@ -23,7 +23,7 @@ void load_map(sensor_msgs::PointCloud* point_cloud, PolyMap* map)
 
 void prepare_rt_pcl(sensor_msgs::PointCloud* point_cloud, double** points, int size)
 {
-    raytrace->points.resize(size);
+    point_cloud->points.resize(size);
 
     for(int i = 0; i < point_cloud->points.size(); ++i)
     {
@@ -33,11 +33,18 @@ void prepare_rt_pcl(sensor_msgs::PointCloud* point_cloud, double** points, int s
     }
 }
 
-void set_zero(double* d_arr, int size)
+void set_identity(double* d_arr, int size)
 {
-    for(int i = 0; i < size; ++i)
+    for(int i = 0; i < sqrt(size); ++i)
     {
-        d_arr[i] = 0;
+        for(int j = 0; j < sqrt(size); ++j)
+        {
+           d_arr[i*(int)sqrt(size)+j] = 0;
+           if(i == j)
+           {
+              d_arr[i*(int)sqrt(size)+j] = 1;
+           }
+        }
     }
 }
 
@@ -62,6 +69,7 @@ int main(int argc, char** args)
   ros::Rate loop_rate(1000/30); // 30 fps
 
   // init map
+ // PolyMap* map = new PolyMap("/home/student/s/shoeffner/thesis/amcl6d/sandbox/maps/bunny.ply");
   PolyMap* map = new PolyMap("/home/student/s/shoeffner/thesis/amcl6d/sandbox/maps/pringlescan.ply");
 
   // prepare map mesh
@@ -69,12 +77,13 @@ int main(int argc, char** args)
   load_map(&map_cloud, map);
 
   // prepare raytracer
-  ConfigFile* cfg_file = new ConfigFile("/home/student/s/shoeffner/thesis/amcl6d/sandbox/raytracer/cameraparameters.cfg");
+  ConfigFile* cfg_file = new ConfigFile("/home/student/s/shoeffner/thesis/amcl6d/sandbox/raytracer/cameraparameters.cfg", true);
   CameraParameters* cam_params = new CameraParameters(cfg_file);
   CGALRaytracer* raytracer = new CGALRaytracer(map, cam_params);
   sensor_msgs::PointCloud raytrace;
-  raytrace->header.frame_id = "raytrace";
+  raytrace.header.frame_id = "map";
   double matrix[16];
+  set_identity(matrix, 16);
   double** points;
   int npoints = 0;
 
@@ -85,11 +94,11 @@ int main(int argc, char** args)
     map_publisher.publish(map_cloud);
 
     // do a raytrace and publish the point cloud
-    set_zero(matrix, 16);
+//    set_identity(matrix, 16);
     // raytracing
     raytracer->simulatePointCloud(matrix, points, npoints);
     // prepare point cloud
-    prepare_rt_pcl(points, &raytrace, *npoints);
+    prepare_rt_pcl(&raytrace, points, npoints);
     // publish raytrace
     ray_publisher.publish(raytrace);
 

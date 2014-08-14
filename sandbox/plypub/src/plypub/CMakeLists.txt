@@ -28,7 +28,10 @@ include_directories(/home/student/s/shoeffner/thesis/amcl6d/sandbox/raytracer/sr
 add_library( raytracer SHARED IMPORTED )
 set_target_properties(raytracer PROPERTIES IMPORTED_LOCATION "/home/student/s/shoeffner/thesis/amcl6d/sandbox/raytracer/lib/raytracer.a")
 
+# CGAL needs -frounding-math
+add_definitions("-frounding-math")
+
 add_executable(plypub src/plypub.cpp)
-target_link_libraries(plypub ${catkin_LIBRARIES} polymap raytracer)
+target_link_libraries(plypub ${catkin_LIBRARIES} polymap raytracer CGAL)
 
 

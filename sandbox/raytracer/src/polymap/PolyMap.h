@@ -3,6 +3,7 @@
  *
  *  Created on: 10.08.2014
  *  Author: Sebastian Höffner
+ *  Modified: 14.08.2014
  */
 
 #ifndef POLYMAP_H_
@@ -38,9 +39,19 @@ public:
     int face_count();
     
     /**
+     * Returns the number of vertices.
+     */
+    int vertex_count();
+
+    /**
      * Returns the face with index index
      */
     Face get_face(int index);
+
+    /**
+     * Returns the vertex with index index
+     */
+    Vertex get_vertex(int index);
     
 
 private:
