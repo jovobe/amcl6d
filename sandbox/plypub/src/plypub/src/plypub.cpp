@@ -69,8 +69,8 @@ int main(int argc, char** args)
   ros::Rate loop_rate(1000/30); // 30 fps
 
   // init map
- // PolyMap* map = new PolyMap("/home/student/s/shoeffner/thesis/amcl6d/sandbox/maps/bunny.ply");
-  PolyMap* map = new PolyMap("/home/student/s/shoeffner/thesis/amcl6d/sandbox/maps/pringlescan.ply");
+  PolyMap* map = new PolyMap("/home/student/s/shoeffner/thesis/amcl6d/sandbox/maps/bunny.ply");
+ // PolyMap* map = new PolyMap("/home/student/s/shoeffner/thesis/amcl6d/sandbox/maps/pringlescan.ply");
 
   // prepare map mesh
   sensor_msgs::PointCloud map_cloud;
@@ -96,11 +96,11 @@ int main(int argc, char** args)
     // do a raytrace and publish the point cloud
 //    set_identity(matrix, 16);
     // raytracing
-    raytracer->simulatePointCloud(matrix, points, npoints);
+//    raytracer->simulatePointCloud(matrix, points, npoints);
     // prepare point cloud
-    prepare_rt_pcl(&raytrace, points, npoints);
+//    prepare_rt_pcl(&raytrace, points, npoints);
     // publish raytrace
-    ray_publisher.publish(raytrace);
+//    ray_publisher.publish(raytrace);
 
     // spin and sleep
     ros::spinOnce();

@@ -29,6 +29,7 @@ CGALRaytracer::CGALRaytracer(PolyMap *map,
 		if (e.vertex_count() != 3) {
 			Logger::instance()->log(
 					"CGALRaytracer: Entity is not a triangle. Skipping polygon.");
+      Logger::instance()->logX("si","VertexCount:",e.vertex_count());
 		} else {
 			// Setup CGAL triangle and store it in list
 			Point a(e.get_vertex(0)->get_value("x"), e.get_vertex(0)->get_value("y"), e.get_vertex(0)->get_value("z"));
