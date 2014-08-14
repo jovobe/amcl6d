@@ -29,3 +29,6 @@ face: vertex logger
 	
 maplib: polymap
 	ar rvs $(LIB)polymap.a $(OBJ)PolyMap.o $(OBJ)Face.o $(OBJ)Vertex.o $(OBJ)Logger.o
+
+tracelib: raytracer maplib
+	ar rvs $(LIB)raytracer.a $(OBJ)CameraParameters.o $(OBJ)CGALRaytracer.o $(OBJ)ConfigFile.o $(OBJ)Logger.o
