@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<package>
+  <name>amcl6d_tools</name>
+  <version>0.8.0</version>
+  <description>
+    This package provides tools needed for the amcl6d library.
+
+    It adds the messages which are also used by the 
+    Las Vegas Reconstruction Toolkit
+    to assure compatibility and also the possibility to run the
+    raytracer and other things as standalone packages.
+
+    However, it needs the I/O tools of meshing.pg2013 to run the 
+    meshpublisher.
+  </description>
+
+  <maintainer email="shoeffner@uos.de">Sebastian Höffner</maintainer>
+ 
+  <license>BSD</license>
+
+  <!-- <url type="website">http://wiki.ros.org/raytracer</url> -->
+ 
+  <author email="shoeffner@uos.de">Sebastian Höffner</author>
+  <author email="twiemann@uos.de">Thomas Wiemann</author>
+  <author>Denis Meyer</author> 
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>lvr</build_depend>
+
+  <run_depend>std_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>lvr</run_depend>
+</package>

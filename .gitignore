@@ -3,3 +3,4 @@
 sandbox/raytracer/bin/*
 sandbox/raytracer/obj/*
 log.txt
+*.swp
