@@ -6,7 +6,7 @@
 
   <maintainer email="shoeffner@uos.de">Sebastian Höffner</maintainer>
 
-  <license>Public Domain</license>
+  <license>BSD</license>
 
   <!-- <url type="website">http://uni.sebastian-hoeffner.de/thesis/</url> -->
   
@@ -18,9 +18,11 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>tf</build_depend>
+  <build_depend>cgal_raytracer</build_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>sensor_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>tf</run_depend>
+  <run_depend>cgal_raytracer</run_depend>
 
 </package>

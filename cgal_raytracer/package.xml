@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>GALRaytracer</name>
+  <name>cgal_raytracer</name>
   <version>1.0.0</version>
-  <description>The raytracer package</description>
+  <description>This package provides libraries for raytracing.</description>
 
   <maintainer email="shoeffner@uos.de">Sebastian Höffner</maintainer>
  

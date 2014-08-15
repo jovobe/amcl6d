@@ -6,19 +6,20 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   tf
+  cgal_raytracer
 )
 
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES plypub
-#  CATKIN_DEPENDS roscpp sensor_msgs std_msgs tf
+  CATKIN_DEPENDS cgal_raytracer 
 #  DEPENDS system_lib
 )
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
   include ${catkin_INCLUDE_DIRS}
-  ../raytracer/include
+  # ../raytracer/include
 )
 
 # my libs
@@ -33,6 +34,6 @@ include_directories(
 add_definitions("-frounding-math")
 
 add_executable(plypub src/plypub.cpp)
-target_link_libraries(plypub ${catkin_LIBRARIES} polymap raytracer CGAL)
+target_link_libraries(plypub ${catkin_LIBRARIES} polymap cgal_raytracer CGAL)
 
 

@@ -77,7 +77,7 @@ int main(int argc, char** args)
   load_map(&map_cloud, map);
 
   // prepare raytracer
-  ConfigFile* cfg_file = new ConfigFile(root_dir + "raytracer/cameraparameters.cfg", true);
+  ConfigFile* cfg_file = new ConfigFile(root_dir + "config/cameraparameters.cfg", true);
   CameraParameters* cam_params = new CameraParameters(cfg_file);
   CGALRaytracer* raytracer = new CGALRaytracer(map, cam_params);
   sensor_msgs::PointCloud raytrace;
