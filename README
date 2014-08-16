@@ -1,3 +1,7 @@
 compile with:
 
 catkin_make -DCATKIN_BLACKLIST_PACKAGES="plypub;cgal_raytracer"
+
+run with:
+
+roslaunch amcl6d_tools mesh_pub.launch

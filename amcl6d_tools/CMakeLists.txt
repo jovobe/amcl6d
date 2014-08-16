@@ -2,11 +2,12 @@ cmake_minimum_required(VERSION 2.8.3)
 project(amcl6d_tools)
 
 find_package(catkin REQUIRED COMPONENTS
+  roscpp
   std_msgs
   geometry_msgs
   sensor_msgs
   message_generation
-#  lvr
+  tf
 )
 
 add_message_files(
@@ -30,20 +31,21 @@ generate_messages(
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES lvr_logger #lvr
+  LIBRARIES lvr_logger
   CATKIN_DEPENDS message_runtime
 )
 
 # this is because meshing.pg2013 is not catkinized
 include_directories(
-  /home/student/s/shoeffner/ros-hydro/dry/meshing.pg2013/include/liblvr
+  $ENV{HOME}/ros-hydro/dry/meshing.pg2013/include/liblvr
 )
-
-#find_library(
-#  lvr
-#  PATHS /home/student/s/shoeffner/ros-hydro/dry/meshing.pg2013/lib/liblvr.so
-#)
+#add_library(lvr PATH $ENV{HOME}/ros-hydro/dry/meshing.pg2013/lib/liblvr.so)
 # end workaround
+
+# find boost
+find_package(Boost COMPONENTS system REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
@@ -60,6 +62,6 @@ add_executable(mesh_publisher
 )
 
 target_link_libraries(mesh_publisher
-  lvr_logger /home/student/s/shoeffner/ros-hydro/dry/meshing.pg2013/lib/liblvr.so
+  lvr_logger ${catkin_LIBRARIES} $ENV{HOME}/ros-hydro/dry/meshing.pg2013/lib/liblvr.so ${Boost_LIBRARIES}
 )
 

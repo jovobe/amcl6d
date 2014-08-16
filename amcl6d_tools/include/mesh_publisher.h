@@ -12,16 +12,23 @@
 #include "Logger.h"
 #include "io/ModelFactory.hpp" 
                // from meshing.pg2013, note the workaround in CMakeLists.txt !!!
-#include "amcl6d_tools/Mesh.h" // Mesh message, should later maybe be changed to lvr/Mesh.h or something
+               // since meshing.pg2013 is not catkinized
+#include "amcl6d_tools/Mesh.h" // Mesh message, should later maybe
+                               // be changed to lvr/Mesh.h or something
+                               // note that it is also in the code
+#include "boost/shared_array.hpp"
+//#include "geometry_msgs/Point32.h"
+#include "sensor_msgs/PointCloud.h"
 
 class mesh_publisher {
 public:
 
 	/**
-	 * default ctor, pass mesh as param to rosrun:
-   * rosrun amcl6d mesh_publisher _mesh:=PATH/TO/MESH
+	 * default ctor
+   * @param mesh mesh path
+   * @param frame frame name
 	 */
-	mesh_publisher(std::string mesh);
+	mesh_publisher(std::string mesh, std::string frame = "mesh");
 
   /**
    * default dtor
@@ -33,10 +40,19 @@ public:
    */
   amcl6d_tools::Mesh get_message();
 
+  /**
+   * Returns the mesh point cloud message
+   */
+  sensor_msgs::PointCloud get_pointcloud();
+
 private:
 
   lvr::ModelPtr m_model;
+  amcl6d_tools::Mesh m_mesh_message;
+  sensor_msgs::PointCloud m_mesh_pcl;
+  std::string m_frame;
 
+  void convert_model_to_messages();
 
 };
 
