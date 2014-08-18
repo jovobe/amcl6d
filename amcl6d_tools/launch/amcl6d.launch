@@ -1,14 +1,17 @@
+<?xml version="1.0"?>
 <launch>
-  <param name="topic" value="map_mesh" />
-  <param name="mesh_path" value="/ros-hydro/wet/src/amcl6d/maps/" />
-  <param name="mesh" value="flur2_ascii.ply" />
-  <node name="map_publisher" pkg="amcl6d_tools" type="mesh_publisher" />
+    <param name="topic" value="map_mesh" />
+    <param name="mesh_path" value="/ros-hydro/wet/src/amcl6d/maps/" />
+    <param name="mesh" value="flur2_ascii.ply" />
+    <node name="map_publisher" pkg="amcl6d_tools" 
+          type="mesh_publisher" />
+      
+    <param name="mesh_topic" value="map_mesh" />
+    <param name="raytrace_frame" value="world" />
+    <node name="raytracer_service" pkg="cgal_raytracer" 
+          type="raytracer_service" />
+      
+    <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui" />
     
-  <param name="mesh_topic" value="map_mesh" />
-  <param name="raytrace_frame" value="world" />
-  <node name="raytracer_service" pkg="cgal_raytracer" type="raytracer_service" />
-    
-  <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui" />
-  
-  <node name="rviz" pkg="rviz" type="rviz" />
+    <node name="rviz" pkg="rviz" type="rviz" />
 </launch>

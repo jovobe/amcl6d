@@ -4,7 +4,8 @@
  * @author Denis Meyer
  * @version 0.1.3.2
  * @created 3/16/11
- * @lastModification 4/6/11
+ * @lastModification 18/08/14
+ * @author Sebastian Höffner 
  * @file Logger.cpp
  */
 #include "amcl6d_tools/Logger.h"

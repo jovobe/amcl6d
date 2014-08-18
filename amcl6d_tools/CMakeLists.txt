@@ -39,13 +39,11 @@ catkin_package(
 include_directories(
   $ENV{HOME}/ros-hydro/dry/meshing.pg2013/include/liblvr
 )
-#add_library(lvr PATH $ENV{HOME}/ros-hydro/dry/meshing.pg2013/lib/liblvr.so)
 # end workaround
 
 # find boost
 find_package(Boost COMPONENTS system REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
-
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
@@ -62,6 +60,9 @@ add_executable(mesh_publisher
 )
 
 target_link_libraries(mesh_publisher
-  lvr_logger ${catkin_LIBRARIES} $ENV{HOME}/ros-hydro/dry/meshing.pg2013/lib/liblvr.so ${Boost_LIBRARIES}
+  lvr_logger 
+  ${catkin_LIBRARIES} 
+  $ENV{HOME}/ros-hydro/dry/meshing.pg2013/lib/liblvr.so # workaround
+  ${Boost_LIBRARIES}
 )
 
