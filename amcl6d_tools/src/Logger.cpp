@@ -7,7 +7,7 @@
  * @lastModification 4/6/11
  * @file Logger.cpp
  */
-#include "Logger.h"
+#include "amcl6d_tools/Logger.h"
 
 // static variables
 Logger* Logger::m_instance = 0;

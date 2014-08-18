@@ -19,14 +19,13 @@
 #include <vector>
 #include <limits>
 
-#include "MatrixMath.hpp"
-#include "Logger.h"
+#include "cgal_raytracer/MatrixMath.hpp"
+#include "amcl6d_tools/Logger.h"
 
-#include "CameraParameters.h"
-#include "polymap/PolyMap.h"
-#include "polymap/Face.h"
-#include "polymap/Vertex.h"
+#include "cgal_raytracer/CameraParameters.h"
+#include "amcl6d_tools/Mesh.h"
 
+#include <boost/thread/mutex.hpp>
 
 typedef CGAL::Simple_cartesian<double> K;
 typedef CGAL::Point_3<K> CPoint;
@@ -55,17 +54,21 @@ typedef std::list<ObjectAndPrimitiveID>::iterator ObjectAndPrimitiveIDIterator;
 
 class CGALRaytracer {
 public:
-	CGALRaytracer(PolyMap *map, CameraParameters* camParams);
-	void simulatePointCloud(double* matrix, double** &points, int &n_points);
+	CGALRaytracer();
+
+  void setMap(amcl6d_tools::Mesh* map);
+	
+  void simulatePointCloud(CameraParameters* cam_params, double* matrix, 
+                          double** &points, int &n_points);
 
 	virtual ~CGALRaytracer();
-
 private:
 	void transformPoint(double point[3], double matrix[16]);
 
-	CameraParameters* m_camParams;
 	Tree* m_tree;
 	TriangleList m_triangleList;
+
+  boost::mutex m_mutex;
 
 };
 

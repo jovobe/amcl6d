@@ -13,13 +13,11 @@
  */
 #include "ros/ros.h"
 
-#include <iostream>
-#include <math.h>
 #include <stdlib.h>
-
-#include "mesh_publisher.h"
 #include "sensor_msgs/PointCloud.h"
 #include "tf/transform_broadcaster.h"
+
+#include "amcl6d_tools/mesh_publisher.h"
 
 int main(int argc, char** argv)
 {

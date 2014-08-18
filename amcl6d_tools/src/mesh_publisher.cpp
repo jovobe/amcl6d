@@ -1,5 +1,8 @@
-#include "mesh_publisher.h"
-#include <iostream>
+/**
+ * a simple mesh publisher
+ */
+#include "amcl6d_tools/mesh_publisher.h"
+
 mesh_publisher::mesh_publisher(std::string mesh, std::string frame)
 {
   m_frame = frame;

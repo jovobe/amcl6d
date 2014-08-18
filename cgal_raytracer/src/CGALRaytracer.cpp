@@ -5,64 +5,107 @@
  *      Author: Thomas Wiemann
  *  Modified:   10.08.2014
  *      Author: Sebastian Höffner
- */
+*/
  
-#include "CGALRaytracer.h"
+#include "cgal_raytracer/CGALRaytracer.h"
 
 using std::numeric_limits;
 
-CGALRaytracer::CGALRaytracer(PolyMap *map,
-		CameraParameters* camParams) {
-	Logger::instance()->setPrefix("Log ----- ");
-	Logger::instance()->setPostfix("");
+CGALRaytracer::CGALRaytracer() 
+{
+  m_triangleList = TriangleList();
+  m_tree = NULL;
+}
+
+void CGALRaytracer::setMap(amcl6d_tools::Mesh* map)
+{
+  // lock this to avoid modification of map while raytracing
+  boost::lock_guard<boost::mutex> guard(m_mutex);
+
+  // clean up old stuff
+  if(m_triangleList.size() > 0)
+  {
+    m_triangleList.clear();
+  }
+
+  if(m_tree != NULL)
+  {
+    delete m_tree;
+    m_tree = NULL;
+  }
 
 	// Setup a list of triangles
-	size_t triangle_count = map->face_count();
-	Logger::instance()->logX("si", "CGALRaytracer::CGALRaytracer - map->face_count() = ", triangle_count);
+	size_t triangle_count = map->mesh.faces.size();
+	Logger::instance()->logX("si", "CGALRaytracer::CGALRaytracer - faces: ", 
+                                 triangle_count);
 	K kernel;
 
-	for (size_t i = 0; i < triangle_count; i++) {
-		// Get current face
-		Face e = map->get_face(i);
-
-		// Check if it is a triangle
-		if (e.vertex_count() != 3) {
-			Logger::instance()->log(
-					"CGALRaytracer: Entity is not a triangle. Skipping polygon.");
-      Logger::instance()->logX("si","VertexCount:",e.vertex_count());
-		} else {
-			// Setup CGAL triangle and store it in list
-			Point a(e.get_vertex(0)->get_value("x"), e.get_vertex(0)->get_value("y"), e.get_vertex(0)->get_value("z"));
-			Point b(e.get_vertex(1)->get_value("x"), e.get_vertex(1)->get_value("y"), e.get_vertex(1)->get_value("z"));
-			Point c(e.get_vertex(2)->get_value("x"), e.get_vertex(2)->get_value("y"), e.get_vertex(2)->get_value("z"));
-
-			Triangle tri(a, b, c);
-
-			if (kernel.is_degenerate_3_object()(tri)) {
-				Logger::instance()->log(
-						"CGALRaytracer (Ctor): Warning: found degenerated triangle.");
-			} else {
-				m_triangleList.push_back(tri);
-			}
+  int degen_count = 0;
+	for(size_t i = 0; i < triangle_count; i++) {
+    std::cout << "\r" << "Reading triangle: " << i;
+  	// Setup CGAL triangle and store it in list
+	  Point a(
+          map->mesh.vertices[map->mesh.faces[i].i].x, 
+          map->mesh.vertices[map->mesh.faces[i].i].y, 
+          map->mesh.vertices[map->mesh.faces[i].i].z        
+        );
+	  Point b(
+          map->mesh.vertices[map->mesh.faces[i].j].x, 
+          map->mesh.vertices[map->mesh.faces[i].j].y, 
+          map->mesh.vertices[map->mesh.faces[i].j].z        
+        );
+	  Point c(
+          map->mesh.vertices[map->mesh.faces[i].k].x, 
+          map->mesh.vertices[map->mesh.faces[i].k].y, 
+          map->mesh.vertices[map->mesh.faces[i].k].z        
+        );
+		
+    Triangle tri(a, b, c);
+		if (kernel.is_degenerate_3_object()(tri)) 
+    {
+      ++degen_count;
+		} 
+    else 
+    {
+			m_triangleList.push_back(tri);
 		}
 	}
+  std::cout << std::endl;
 
-	// Construct AABB tree
+  if(degen_count > 0)
+  {
+    Logger::instance()->logX("sis",
+  		"CGALRaytracer (Ctor): Warning: found", degen_count,
+      "degenerated triangles.");
+  }
+	
+  // Construct AABB tree
 	m_tree = new Tree(m_triangleList.begin(), m_triangleList.end());
-
-	// Save camera parameters
-	m_camParams = camParams;
+  
 }
 
-CGALRaytracer::~CGALRaytracer() {
+CGALRaytracer::~CGALRaytracer()
+{
 	// Free triangle list and Tree
+  Logger::instance()->log("~CGALRaytracer");
+  if(m_tree != NULL)
+  {
+    delete m_tree;
+    m_tree = NULL;
+  }
+  Logger::instance()->log("~CGALRaytracer done.");
 }
 
-void CGALRaytracer::simulatePointCloud(double* matrix, double** &points,
-		int &n_points) {
+void CGALRaytracer::simulatePointCloud(
+    CameraParameters* cam_param, double* matrix, 
+    double** &points, int &n_points) 
+{
+  // lock this, so that the map does not get modified during a raytrace
+  boost::lock_guard<boost::mutex> guard(m_mutex);
+
 	// Calculate absolute pose of the camera
 	double matCamPose[16];
-	MMult(matrix, m_camParams->m_matrixCamOrientation, matCamPose);
+	MMult(matrix, cam_param->m_matrixCamOrientation, matCamPose);
 	Logger::instance()->log("matCamPose = ");
 	Logger::instance()->log(matCamPose, 4, 4);
 
@@ -75,7 +118,7 @@ void CGALRaytracer::simulatePointCloud(double* matrix, double** &points,
 
 	// Create pure rotation matrix from camera offset
 	double matCamRotation[16];
-	M4copy(m_camParams->m_matrixCamOrientation, matCamRotation);
+	M4copy(cam_param->m_matrixCamOrientation, matCamRotation);
 	matCamRotation[12] = matCamRotation[13] = matCamRotation[14] = 0.0;
 	Logger::instance()->log("matCamRotation = ");
 	Logger::instance()->log(matCamRotation, 4, 4);
@@ -99,13 +142,13 @@ void CGALRaytracer::simulatePointCloud(double* matrix, double** &points,
 	// pin hole camera model
 	RayList rayList;
 
-	double planeZ1 = m_camParams->m_plane_minZ;
-	double planeZ2 = m_camParams->m_plane_maxZ;
-	double planeY1 = m_camParams->m_plane_minY;
-	double planeY2 = m_camParams->m_plane_maxY;
+	double planeZ1 = cam_param->m_plane_minZ;
+	double planeZ2 = cam_param->m_plane_maxZ;
+	double planeY1 = cam_param->m_plane_minY;
+	double planeY2 = cam_param->m_plane_maxY;
 
-	double stepZ = (planeZ2 - planeZ1) / m_camParams->m_resolutionH;
-	double stepY = (planeY2 - planeY1) / m_camParams->m_resolutionV;
+	double stepZ = (planeZ2 - planeZ1) / cam_param->m_resolutionH;
+	double stepY = (planeY2 - planeY1) / cam_param->m_resolutionV;
 
 	int i = 0;
 	for (double z = planeZ2; z > planeZ1 + stepZ; z -= stepZ) {
@@ -113,7 +156,7 @@ void CGALRaytracer::simulatePointCloud(double* matrix, double** &points,
 			// Create image plane point and transform according to
 			// current camera pose
 			double imagePlanePoint[3];
-			imagePlanePoint[0] = m_camParams->m_focalLength;
+			imagePlanePoint[0] = cam_param->m_focalLength;
 			imagePlanePoint[1] = y;
 			imagePlanePoint[2] = z;
 
@@ -186,7 +229,8 @@ void CGALRaytracer::simulatePointCloud(double* matrix, double** &points,
 	n_points = (int) tmp_points.size();
 	points = new double*[n_points];
 
-	for (int i = 0; i < n_points; i++) {
+	for(int i = 0; i < n_points; i++) 
+  {
 		// points[i] = tmp_points[i];
 
 		points[i] = new double[3];
@@ -196,7 +240,8 @@ void CGALRaytracer::simulatePointCloud(double* matrix, double** &points,
 	}
 }
 
-void CGALRaytracer::transformPoint(double point[3], double matrix[16]) {
+void CGALRaytracer::transformPoint(double point[3], double matrix[16]) 
+{
 	double x, y, z;
 	x = point[0] * matrix[0] + point[1] * matrix[4] + point[2] * matrix[8];
 	y = point[0] * matrix[1] + point[1] * matrix[5] + point[2] * matrix[9];

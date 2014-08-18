@@ -1,7 +1,23 @@
-compile with:
-
-catkin_make -DCATKIN_BLACKLIST_PACKAGES="plypub;cgal_raytracer"
-
-run with:
+run with (if needed change parameters in .launch files)
 
 roslaunch amcl6d_tools mesh_pub.launch
+roslaunch cgal_raytracer raytracer.launch
+
+reconfigure cameraparameters with:
+roslaunch lqr_reconfigure lqr_reconfigure
+
+send test pose with:
+rosservice call /raytrace_at_pose "{pose: {position: {x: 0, y: 0, z: 0}, orientation: {x: 0, y: 0, z: 0, w: 1} } }"
+
+TODO:
+dynamic reconfigure for mesh publisher
+roslvr compatibility (use messages to roslvr pkg instead of amcl6d_tools -> change code accordingly
+                      -> difficult because of wet/dry compatibility)
+
+simple raytrace requester (dynamically reconfigurable pose, on reconfigure cb requests a raytrace and publishes the received pointcloud for visualization)
+
+amcl6d obviously
+
+?rviz plugin for Mesh (or given?)
+
+robot implementation
