@@ -1,10 +1,14 @@
 /*
  * CGALRaytracer.h
  *
- *  Created on: 06.01.2011
- *      Author: Thomas Wiemann
- *  Modified:   10.08.2014
- *      Author: Sebastian Höffner
+ * This class provides a raytracer which uses the CGAL library.
+ * It needs a pose and a mesh as well as camera parameters to provide
+ * a list of points achieved from the raytrace.
+ *
+ *  Created: 2011-01-06
+ *  Author: Thomas Wiemann
+ *  Last modified: 2014-08-18
+ *  Author: Sebastian Höffner
  */
 
 #ifndef CGALRAYTRACER_H_
@@ -19,10 +23,11 @@
 #include <vector>
 #include <limits>
 
-#include "cgal_raytracer/MatrixMath.hpp"
 #include "amcl6d_tools/Logger.h"
-
 #include "cgal_raytracer/CameraParameters.h"
+
+#include "cgal_raytracer/MatrixMath.hpp"
+
 #include "amcl6d_tools/Mesh.h"
 
 #include <boost/thread/mutex.hpp>
@@ -54,21 +59,42 @@ typedef std::list<ObjectAndPrimitiveID>::iterator ObjectAndPrimitiveIDIterator;
 
 class CGALRaytracer {
 public:
-	CGALRaytracer();
+    /**
+     * Default constructor. Initializes the Trianglelist.
+     */
+    CGALRaytracer();
 
-  void setMap(amcl6d_tools::Mesh* map);
-	
-  void simulatePointCloud(CameraParameters* cam_params, double* matrix, 
-                          double** &points, int &n_points);
+    /**
+     * Destructor.
+     */
+    virtual ~CGALRaytracer();
+    
+    /**
+     * Updates the map. This method acquires a boost::unique_lock so that
+     * no raytraces are in progress while the map gets changed.
+     *
+     * @param map the new map mesh.
+     */
+    void setMap(amcl6d_tools::Mesh* map);
+    
+    /**
+     * Simulates a point cloud, i.e. does the ray trace for the given
+     * camera parameters.
+     */
+    void simulatePointCloud(CameraParameters* cam_params, double* matrix, 
+                            double** &points, int &n_points);
 
-	virtual ~CGALRaytracer();
 private:
-	void transformPoint(double point[3], double matrix[16]);
+    /**
+     * Transforms the point with the given matrix.
+     */
+    void transformPoint(double point[3], double matrix[16]);
 
-	Tree* m_tree;
-	TriangleList m_triangleList;
+    Tree* m_tree;
+    TriangleList m_triangleList;
 
-  boost::mutex m_mutex;
+    // TODO change to shared and make unique lock etc.
+    boost::mutex m_mutex;
 
 };
 

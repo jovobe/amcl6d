@@ -21,3 +21,9 @@ amcl6d obviously
 robot implementation
 
 rviz_mesh_plugin
+
+
+IMPORTANT TODOS:
+raytracer_service::raytrace Cameraparameters
+CameraParameters lock copy constructor
+CGALRaytracer: locks

@@ -29,9 +29,6 @@ bool raytracer_service::raytrace(
 {
     Logger::instance()->log("Raytrace requested.");
 
-    // prepare cam_params for the raytrace from pose
-    m_cam_params.setPose(request.pose);
-
     // identity matrix
     double matrix[] = {1, 0, 0, 0,
                        0, 1, 0, 0,
@@ -42,6 +39,12 @@ bool raytracer_service::raytrace(
     // corresponding number of points
     int n_points;
 
+    // copy the current camera parameters, so that other raytraces can 
+    // provide other poses TODO -> thread safety for copy constructor
+    //CameraParameters currentParams(m_cam_params);
+    // prepare cam_params for the raytrace from pose
+    m_cam_params.setPose(request.pose);
+    
     // actual raytrace
     m_raytracer->simulatePointCloud(&m_cam_params, matrix, points, n_points);
  

@@ -1,28 +1,39 @@
 <?xml version="1.0"?>
 <package>
-  <name>cgal_raytracer</name>
-  <version>1.0.0</version>
-  <description>This package provides libraries for raytracing.</description>
+    <name>cgal_raytracer</name>
+    <version>1.0.0</version>
+    <description>
+      This package provides a service for raytracing in a published map.
+      The raytracer is built on CGAL's AABB_tree.
+    
+      The service server subscribes to a topic to read a mesh for the raytraces.
+    </description>
 
-  <maintainer email="shoeffner@uos.de">Sebastian Höffner</maintainer>
+    <maintainer email="shoeffner@uos.de">Sebastian Höffner</maintainer>
  
-  <license>BSD</license>
+    <license>MIT</license>
 
-  <!-- <url type="website">http://wiki.ros.org/raytracer</url> -->
+    <!-- <url type="website">http://wiki.ros.org/raytracer</url> -->
  
-  <author email="twiemann@uos.de">Thomas Wiemann</author>
-  <author email="shoeffner@uos.de">Sebastian Höffner</author>
+    <author email="twiemann@uos.de">Thomas Wiemann</author>
+    <author email="shoeffner@uos.de">Sebastian Höffner</author>
 
-  <buildtool_depend>catkin</buildtool_depend>
+    <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>message_generation</build_depend>
-  <build_depend>amcl6d_tools</build_depend>
-  <build_depend>libcgal8</build_depend>
-  <build_depend>dynamic_reconfigure</build_depend>
+    <build_depend>message_generation</build_depend>
+    <build_depend>amcl6d_tools</build_depend>
+    <build_depend>libcgal8</build_depend>
+    <build_depend>dynamic_reconfigure</build_depend>
+    <build_depend>roscpp</build_depend>
+    <build_depend>geometry_msgs</build_depend>
+    <build_depend>sensor_msgs</build_depend>
 
-  <run_depend>message_runtime</run_depend>
-  <run_depend>amcl6d_tools</run_depend>
-  <run_depend>libcgal8</run_depend>
-  <run_depend>dynamic_reconfigure</run_depend>
+    <run_depend>message_runtime</run_depend>
+    <run_depend>amcl6d_tools</run_depend>
+    <run_depend>libcgal8</run_depend>
+    <run_depend>dynamic_reconfigure</run_depend>
+    <run_depend>roscpp</run_depend>
+    <run_depend>geometry_msgs</run_depend>
+    <run_depend>sensor_msgs</run_depend>
 
 </package>
