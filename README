@@ -18,6 +18,6 @@ simple raytrace requester (dynamically reconfigurable pose, on reconfigure cb re
 
 amcl6d obviously
 
-?rviz plugin for Mesh (or given?)
-
 robot implementation
+
+rviz_mesh_plugin
