@@ -40,7 +40,7 @@ void mesh_publisher::convert_model_to_messages()
   m_mesh_message.mesh.header.frame_id = m_frame;
 
   // vertices
-  unsigned int num_vertices = 0;
+  long unsigned int num_vertices = 0;
   boost::shared_array<float> vertex_array(m_model->m_mesh->getVertexArray(num_vertices));
   m_mesh_message.mesh.vertices.resize(num_vertices);
   m_mesh_pcl.points.resize(num_vertices);
@@ -57,7 +57,7 @@ void mesh_publisher::convert_model_to_messages()
   }
 
   // faces
-  unsigned int num_faces = 0;
+  long unsigned int num_faces = 0;
   boost::shared_array<unsigned int> face_array(m_model->m_mesh->getFaceArray(num_faces));
   m_mesh_message.mesh.faces.resize(num_faces);
   Logger::instance()->logX("sis","Mesh has", num_faces, "faces");
