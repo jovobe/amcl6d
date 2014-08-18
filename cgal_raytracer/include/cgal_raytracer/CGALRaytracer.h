@@ -30,7 +30,7 @@
 
 #include "amcl6d_tools/Mesh.h"
 
-#include <boost/thread/mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
 
 typedef CGAL::Simple_cartesian<double> K;
 typedef CGAL::Point_3<K> CPoint;
@@ -93,8 +93,7 @@ private:
     Tree* m_tree;
     TriangleList m_triangleList;
 
-    // TODO change to shared and make unique lock etc.
-    boost::mutex m_mutex;
+    boost::shared_mutex m_mutex;
 
 };
 

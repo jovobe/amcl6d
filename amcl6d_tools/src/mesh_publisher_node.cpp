@@ -26,62 +26,39 @@
 
 #include "amcl6d_tools/mesh_publisher.h"
 
+#include "dynamic_reconfigure/server.h"
+
 int main(int argc, char** argv)
 {
     // initialize
     ros::init(argc, argv, "mesh_publisher");
     ros::NodeHandle nh;
     
-    // check params
-    if(!nh.hasParam("mesh_path"))
-    {
-        ROS_ERROR("Please set the 'mesh_path' parameter. Exiting.");
-        Logger::instance()->log("No mesh_path parameter found.");
-        return 1;
-    }
-
-    if(!nh.hasParam("mesh"))
-    {
-        ROS_ERROR("Please set the 'mesh' parameter. Exiting.");
-        Logger::instance()->log("No mesh parameter found.");
-        return 1;
-    }
-
     if(!nh.hasParam("topic"))
     {
         ROS_INFO("Parameter 'topic' was not set, publishing to /mesh.");
     }
-
-    if(nh.hasParam("frame"))
-    {
-        ROS_INFO("Custom frame given.");
-    }
-
-    // load path variables
-    std::string home_dir(getenv("HOME"));
-    std::string mesh_path;
-    std::string mesh;
-    nh.getParam("mesh_path", mesh_path);
-    nh.getParam("mesh", mesh);
-    std::string model_path = home_dir + mesh_path + mesh;
-    Logger::instance()->logX("ss", "Mesh:", model_path.c_str());
-
     // load topic
     std::string topic;
     nh.param<std::string>("topic", topic, "mesh");
     Logger::instance()->logX("ss", "Topic:", topic.c_str());
 
-    // load frame
-    std::string frame_name;
-    nh.param<std::string>("frame", frame_name, "mesh");
-    Logger::instance()->logX("ss", "Frame:", frame_name.c_str());
-
     // initialize mesh publisher (loads model automatically)
-    mesh_publisher* mp = new mesh_publisher(model_path, frame_name);
+    mesh_publisher* mp = new mesh_publisher();
+    
+    // set reconfiguration callbacks and load mesh
+    dynamic_reconfigure::Server<amcl6d_tools::mesh_publisherConfig> reconf_srv;
+    dynamic_reconfigure::Server<amcl6d_tools::mesh_publisherConfig>::CallbackType
+                    reconf_cbfun;
+    reconf_cbfun = boost::bind(&mesh_publisher::reconfigure_callback, 
+                               mp, _1, _2);
+    reconf_srv.setCallback(reconf_cbfun);
     
     // initialize publishers
-    ros::Publisher publisher = nh.advertise<amcl6d_tools::Mesh>(topic, 1000, true);
-    ros::Publisher pcl_pub   = nh.advertise<sensor_msgs::PointCloud>("mesh_point_cloud", 1000, true);
+    ros::Publisher publisher = nh.advertise<amcl6d_tools::Mesh>(
+                               topic, 1000, true);
+    ros::Publisher pcl_pub   = nh.advertise<sensor_msgs::PointCloud>(
+                               "mesh_point_cloud", 1000, true);
 
     // provide transformations
     tf::TransformBroadcaster br;
@@ -93,7 +70,8 @@ int main(int argc, char** argv)
     ros::Rate loop_rate(1000/30); // 30 fps
     while(ros::ok())
     {
-        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", frame_name));
+        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), 
+                                              "world", mp->get_frame()));
         publisher.publish(mp->get_message());
         pcl_pub.publish(mp->get_pointcloud());
 

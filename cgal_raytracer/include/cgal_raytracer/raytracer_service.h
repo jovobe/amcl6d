@@ -38,6 +38,8 @@
 
 #include "cgal_raytracer/RaytraceAtPose.h"
 
+#include <boost/thread/shared_mutex.hpp>
+
 class raytracer_service 
 {
 public:
@@ -73,7 +75,10 @@ public:
 
     /**
      * A callback for the dynamic reconfiguration of the camera parameters.
-     * It just passes it on to the CameraParamaters::reconfigure function.
+     * It passes it on to the CameraParamaters::reconfigure function.
+     * 
+     * Additionally it replaces the frame of the raytraces. (Because 
+     * you can not run two dynamic reconfiguration servers in one node.)
      *
      * @param config the CameraParameters to set
      * @param a value which indicates how many values were changed, this 
@@ -81,7 +86,7 @@ public:
      */     
     void reconfigure_callback(cgal_raytracer::CamParamConfig &config, 
                               uint32_t level);
-
+    
     /**
      * Returns true as soon as the service loaded a mesh from the subscribed
      * topic. By default this is /mesh, but can be changed with the parameter
@@ -101,6 +106,8 @@ private:
     bool m_mesh_received;
     CameraParameters m_cam_params;
     CGALRaytracer* m_raytracer;
+
+    boost::shared_mutex m_mutex;
 };
 
 #endif /* RAYTRACER_SERVICE_H */

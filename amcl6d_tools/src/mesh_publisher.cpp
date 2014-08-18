@@ -8,12 +8,8 @@
  */
 #include "amcl6d_tools/mesh_publisher.h"
 
-mesh_publisher::mesh_publisher(std::string mesh, std::string frame)
+mesh_publisher::mesh_publisher()
 {
-    m_frame = frame;
-    m_model = lvr::ModelFactory::readModel(mesh);
-
-    convert_model_to_messages();
 }
 
 mesh_publisher::~mesh_publisher()
@@ -23,12 +19,51 @@ mesh_publisher::~mesh_publisher()
 
 amcl6d_tools::Mesh mesh_publisher::get_message()
 {
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
     return m_mesh_message;
 }
 
 sensor_msgs::PointCloud mesh_publisher::get_pointcloud()
 {
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
     return m_mesh_pcl;
+}
+
+void mesh_publisher::reconfigure_callback(
+        amcl6d_tools::mesh_publisherConfig &config, 
+        uint32_t level)
+{
+    std::string home_dir(getenv("HOME"));
+    std::string mesh_path = config.mesh_path;
+    std::string mesh_name = config.mesh_name;
+    std::string mesh = home_dir + mesh_path + mesh_name;
+    Logger::instance()->logX("ss", "Trying to load mesh:", mesh.c_str());
+    replace_frame(config.frame);
+    replace_mesh(mesh);
+}
+
+void mesh_publisher::set_mesh(std::string mesh)
+{
+    replace_mesh(mesh);
+}
+
+void mesh_publisher::replace_mesh(std::string mesh)
+{
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
+    Logger::instance()->log("Setting mesh");
+    Logger::instance()->logX("ss", "Frame:", m_frame.c_str());
+    m_model = lvr::ModelFactory::readModel(mesh);
+    convert_model_to_messages();
+}
+
+void mesh_publisher::replace_frame(std::string frame)
+{
+    m_frame = frame;
+}
+
+std::string mesh_publisher::get_frame()
+{
+    return m_frame;
 }
 
 void mesh_publisher::convert_model_to_messages()

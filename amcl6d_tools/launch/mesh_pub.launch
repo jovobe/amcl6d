@@ -1,9 +1,6 @@
 <?xml version="1.0"?>
 <launch>
   <param name="topic" value="map_mesh" />
-  <param name="mesh_path" value="/ros-hydro/wet/src/amcl6d/maps/" />
-  <param name="mesh" value="bunny.ply" />
-
   <node name="map_publisher" pkg="amcl6d_tools" 
         type="mesh_publisher" output="screen" />
 </launch>

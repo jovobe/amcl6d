@@ -24,6 +24,8 @@
 #include "cgal_raytracer/MatrixMath.hpp"
 #include "cgal_raytracer/CamParamConfig.h"
 
+#include "boost/thread/shared_mutex.hpp"
+
 class CameraParameters
 {
 public:
@@ -87,7 +89,7 @@ public:
     double m_minRange;
 
 private:
-
+    boost::shared_mutex m_mutex;
 };
 
 #endif /* CAMERAPARAMETERS_H_ */

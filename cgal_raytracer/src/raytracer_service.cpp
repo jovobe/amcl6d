@@ -39,17 +39,18 @@ bool raytracer_service::raytrace(
     // corresponding number of points
     int n_points;
 
-    // copy the current camera parameters, so that other raytraces can 
-    // provide other poses TODO -> thread safety for copy constructor
-    //CameraParameters currentParams(m_cam_params);
-    // prepare cam_params for the raytrace from pose
-    m_cam_params.setPose(request.pose);
+    CameraParameters current_params(m_cam_params);
+    // prepare current camera params for the raytrace from pose
+    current_params.setPose(request.pose);
     
     // actual raytrace
-    m_raytracer->simulatePointCloud(&m_cam_params, matrix, points, n_points);
+    m_raytracer->simulatePointCloud(&current_params, matrix, points, n_points);
  
     // prepare answer message
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
     response.raytrace.header.frame_id = m_frame;
+    boost::shared_lock<boost::shared_mutex> unlock(m_mutex);
+
     response.raytrace.points.resize(n_points);
     for(int i = 0; i < n_points; ++i)
     {
@@ -89,6 +90,9 @@ void raytracer_service::reconfigure_callback(
 { 
     Logger::instance()->log("Reconfiguring CameraParameters.");
     m_cam_params.reconfigure(config, level);
+    
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
+    m_frame = config.rt_frame;
 }
 
 bool raytracer_service::has_mesh()
@@ -115,9 +119,6 @@ int main(int argc, char** argv)
 
     // set up a raytracer_service instance
     raytracer_service* rt_service = new raytracer_service();
-    
-    // set frame for rt_service
-    nh.param<std::string>("raytrace_frame", rt_service->m_frame, "world");
     
     // set reconfiguration for camera parameters
     dynamic_reconfigure::Server<cgal_raytracer::CamParamConfig> reconf_srv;

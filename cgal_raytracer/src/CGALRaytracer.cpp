@@ -1,4 +1,4 @@
-/*
+/**
  * CGALRaytracer.cpp
  *
  *  Created: 2011-01-06
@@ -31,7 +31,7 @@ CGALRaytracer::~CGALRaytracer()
 void CGALRaytracer::setMap(amcl6d_tools::Mesh* map)
 {
     // lock this to avoid modification of map while raytracing
-    boost::lock_guard<boost::mutex> guard(m_mutex);
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
 
     // clean up old stuff
     if(m_triangleList.size() > 0)
@@ -100,7 +100,7 @@ void CGALRaytracer::simulatePointCloud(
         double** &points, int &n_points) 
 {
     // lock this, so that the map does not get modified during a raytrace
-    boost::lock_guard<boost::mutex> guard(m_mutex);
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
 
     // Calculate absolute pose of the camera
     double matCamPose[16];
@@ -215,8 +215,7 @@ void CGALRaytracer::simulatePointCloud(
                 if(!CGAL::assign(currentIntersection, obj)) 
                 {
                     Logger::instance()->log(
-                        "CGALRaytracer::simulatePointCloud(): "
-                      + "Point assignment failed.");
+                        "CGALRaytracer: Point assignment failed.");
                 } 
                 else 
                 {

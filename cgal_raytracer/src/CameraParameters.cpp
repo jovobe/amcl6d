@@ -11,7 +11,7 @@
 
 CameraParameters::CameraParameters() 
 {
-    Logger::instance()->log("CameraParameters - constructor")
+    Logger::instance()->log("CameraParameters - constructor");
     
     double position[3];
     double orientation[3];
@@ -26,6 +26,7 @@ CameraParameters::CameraParameters()
 
 CameraParameters::CameraParameters(const CameraParameters &camParams) 
 {
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
     Logger::instance()->log("CameraParameters - copy constructor");
 
     M4copy(camParams.m_matrixCamOrientation, m_matrixCamOrientation);
@@ -50,6 +51,7 @@ CameraParameters::~CameraParameters() {
 
 void CameraParameters::setPose(geometry_msgs::Pose pose)
 {
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
     double position[3];
     double orientation[3];
 
@@ -74,6 +76,7 @@ void CameraParameters::setPose(geometry_msgs::Pose pose)
 
 void CameraParameters::reconfigure(cgal_raytracer::CamParamConfig &config, uint32_t level)
 {
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
     m_minAngleH   = config.minAngleH; 
     m_maxAngleH   = config.maxAngleH;
     m_minAngleV   = config.minAngleV;
