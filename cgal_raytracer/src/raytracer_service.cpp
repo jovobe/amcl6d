@@ -11,7 +11,7 @@ raytracer_service::raytracer_service()
 {
   m_raytracer = new CGALRaytracer();
   m_frame = "world";
-  m_cam_params = CameraParameters();
+//  m_cam_params = CameraParameters();
   m_mesh_received = false;
 }
 
@@ -56,7 +56,7 @@ bool raytracer_service::raytrace(
     response.raytrace.points[i].z = points[i][2];
   }
 
-  ROS_INFO("Raytrace completed.");
+  ROS_INFO("Raytrace completed. Found %d points.", n_points);
   return true;
 }
 
