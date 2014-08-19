@@ -3,7 +3,7 @@
  *
  *  Created: 2010-09-29
  *  Authors: Denis Meyer, Thomas Wiemann
- *  Last modified on: 2014-08-18
+ *  Last modified: 2014-08-19
  *  Author: Sebastian Höffner
  */
 
@@ -12,16 +12,20 @@
 CameraParameters::CameraParameters() 
 {
     Logger::instance()->log("CameraParameters - constructor");
-    
-    double position[3];
-    double orientation[3];
-    position[0] = 0;
-    position[1] = 0;
-    position[2] = 0;
-    orientation[0] = 0;
-    orientation[1] = 0;
-    orientation[2] = 0;
-    EulerToMatrix4(position, orientation, m_matrixCamOrientation);
+
+    m_minAngleH   =  80;
+    m_maxAngleH   = 110;
+    m_minAngleV   =  80;
+    m_maxAngleV   = 110;
+    m_resolutionV =  40;
+    m_resolutionH =  40;
+    m_focalLength =   0.4;
+    m_plane_minY  = -tan(m_minAngleV * M_PI / 180) * m_focalLength;
+    m_plane_maxY  =  tan(m_minAngleV * M_PI / 180) * m_focalLength;
+    m_plane_minZ  = -tan(m_minAngleH * M_PI / 180) * m_focalLength;
+    m_plane_maxZ  =  tan(m_maxAngleH * M_PI / 180) * m_focalLength;
+    m_minRange    = 0;
+    m_maxRange    = 8;
 }
 
 CameraParameters::CameraParameters(const CameraParameters &camParams) 
@@ -29,7 +33,6 @@ CameraParameters::CameraParameters(const CameraParameters &camParams)
     boost::shared_lock<boost::shared_mutex> lock(m_mutex);
     Logger::instance()->log("CameraParameters - copy constructor");
 
-    M4copy(camParams.m_matrixCamOrientation, m_matrixCamOrientation);
     m_minAngleH   = camParams.m_minAngleH;
     m_maxAngleH   = camParams.m_maxAngleH;
     m_minAngleV   = camParams.m_minAngleV;
@@ -41,37 +44,12 @@ CameraParameters::CameraParameters(const CameraParameters &camParams)
     m_plane_maxZ  = camParams.m_plane_maxZ;
     m_plane_minY  = camParams.m_plane_minY;
     m_plane_maxY  = camParams.m_plane_maxY;
-    m_maxRange    = camParams.m_maxRange;
     m_minRange    = camParams.m_minRange;
+    m_maxRange    = camParams.m_maxRange;
 }
 
 CameraParameters::~CameraParameters() {
     Logger::instance()->log("~CameraParameters");
-}
-
-void CameraParameters::setPose(geometry_msgs::Pose pose)
-{
-    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
-    double position[3];
-    double orientation[3];
-
-    position[0] = pose.position.x;
-    position[1] = pose.position.y;
-    position[2] = pose.position.z;
-
-    // conversion between quaternion and euler
-    double q0 = pose.orientation.x;
-    double q1 = pose.orientation.y;
-    double q2 = pose.orientation.z;
-    double q3 = pose.orientation.w;
-    orientation[0] = atan(       2 * (q0 * q1 + q2 * q3) 
-                          / (1 - 2 * (q1 * q1 + q2 * q2)));
-    orientation[1] = asin(       2 * (q0 * q2 - q3 * q1));
-    orientation[2] = atan(       2 * (q0 * q3 + q1 * q2)
-                          / (1 - 2 * (q2 * q2 + q3 * q3)));
-
-    // Convert to matrix
-    EulerToMatrix4(position, orientation, m_matrixCamOrientation);
 }
 
 void CameraParameters::reconfigure(cgal_raytracer::CamParamConfig &config, uint32_t level)
@@ -88,6 +66,6 @@ void CameraParameters::reconfigure(cgal_raytracer::CamParamConfig &config, uint3
     m_plane_maxY  =  tan(m_minAngleV * M_PI / 180) * m_focalLength;
     m_plane_minZ  = -tan(m_minAngleH * M_PI / 180) * m_focalLength;
     m_plane_maxZ  =  tan(m_maxAngleH * M_PI / 180) * m_focalLength;
-    m_maxRange    = config.maxRange;
     m_minRange    = config.minRange;
+    m_maxRange    = config.maxRange;
 }

@@ -3,9 +3,9 @@
  *
  *  Created: 2011-01-06
  *  Author: Thomas Wiemann
- *  Last modified: 2014-08-18
+ *  Last modified: 2014-08-19
  *  Author: Sebastian Höffner
-*/
+ */
  
 #include "cgal_raytracer/CGALRaytracer.h"
 
@@ -93,18 +93,34 @@ void CGALRaytracer::setMap(amcl6d_tools::Mesh* map)
     m_tree = new Tree(m_triangleList.begin(), m_triangleList.end());
 }
 
-
-
 void CGALRaytracer::simulatePointCloud( 
-        CameraParameters* cam_param, double* matrix, 
+        CameraParameters* cam_param,
+        geometry_msgs::Pose pose,/* double* matrix, */
         double** &points, int &n_points) 
 {
     // lock this, so that the map does not get modified during a raytrace
     boost::shared_lock<boost::shared_mutex> lock(m_mutex);
 
-    // Calculate absolute pose of the camera
+    double position[3];
+    position[0] = pose.position.x;
+    position[1] = pose.position.y;
+    position[2] = pose.position.z;
+
+    double q0 = pose.orientation.x, q1 = pose.orientation.y,
+           q2 = pose.orientation.z, q3 = pose.orientation.w;
+    double rotEuler[3];
+    rotEuler[0] = atan((2*q0*q1+q2*q3)/(1-2*(q1*q1+q2*q2)));
+    rotEuler[1] = asin(2*(q0*q2-q3*q1));
+    rotEuler[2] = atan((2*q0*q3+q1*q2)/(1-2*(q2*q2+q3*q3)));
+
+    double matCamPose[16];
+    EulerToMatrix4(position, rotEuler, matCamPose);
+    
+    // old code
+/*    // Calculate absolute pose of the camera
     double matCamPose[16];
     MMult(matrix, cam_param->m_matrixCamOrientation, matCamPose);
+    MMult(matrix, matrix, matCamPose);
     Logger::instance()->log("matCamPose = ");
     Logger::instance()->log(matCamPose, 4, 4);
 
@@ -132,7 +148,7 @@ void CGALRaytracer::simulatePointCloud(
     M4inv(matFullRotation, matFullRotationInv);
     Logger::instance()->log("matFullRotation = ");
     Logger::instance()->log(matFullRotation, 4, 4);
-
+*/
     // Calculate ray origin from cam pose
     Point ray_origin(matCamPose[12], matCamPose[13], matCamPose[14]);
     CPoint origin(ray_origin);

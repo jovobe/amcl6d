@@ -7,7 +7,7 @@
  *
  *  Created: 2011-01-06
  *  Author: Thomas Wiemann
- *  Last modified: 2014-08-18
+ *  Last modified: 2014-08-19
  *  Author: Sebastian Höffner
  */
 
@@ -28,6 +28,7 @@
 
 #include "cgal_raytracer/MatrixMath.hpp"
 
+#include "geometry_msgs/Pose.h"
 #include "amcl6d_tools/Mesh.h"
 
 #include <boost/thread/shared_mutex.hpp>
@@ -81,7 +82,8 @@ public:
      * Simulates a point cloud, i.e. does the ray trace for the given
      * camera parameters.
      */
-    void simulatePointCloud(CameraParameters* cam_params, double* matrix, 
+    void simulatePointCloud(CameraParameters* cam_params, 
+                            geometry_msgs::Pose pose,/* double* matrix, */
                             double** &points, int &n_points);
 
 private:

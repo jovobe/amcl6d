@@ -8,7 +8,7 @@
  *
  *  Created: 2010-09-29
  *  Authors: Denis Meyer, Thomas Wiemann
- *  Last modified: 2014-08-18
+ *  Last modified: 2014-08-19
  *  Author: Sebastian Höffner
  */
 
@@ -46,11 +46,6 @@ public:
     virtual ~CameraParameters();
 
     /**
-     * Sets the pose for the raytrace.
-     */
-    void setPose(geometry_msgs::Pose pose);
-
-    /**
      * A function to be used as a callback for the dynamic reconfigure (use 
      * e.g. boost::bind) or which can be used to configure the camera manually.
      * Please refer to the documentation of the dynamic reconfigure package
@@ -63,9 +58,6 @@ public:
      */
     void reconfigure(cgal_raytracer::CamParamConfig &config, uint32_t level);
 
-    /// a matrix which stores the current orientation
-    double m_matrixCamOrientation[16];
-    
     /** 
      * Aperture angle, resolution and focal length. The angles should be
      * provided in degrees as they will be converted to radians.
@@ -85,8 +77,8 @@ public:
     double m_plane_maxY;
     
     /// the range of the camera
-    double m_maxRange;
     double m_minRange;
+    double m_maxRange;
 
 private:
     boost::shared_mutex m_mutex;

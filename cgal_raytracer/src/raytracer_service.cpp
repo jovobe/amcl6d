@@ -3,6 +3,8 @@
  *
  *  Created: 2014-08-18
  *  Author: Sebastian Höffner
+ *  Last modified: 2014-08-19
+ *  Author: Sebastian Höffner
  */
 
 #include "cgal_raytracer/raytracer_service.h"
@@ -29,22 +31,13 @@ bool raytracer_service::raytrace(
 {
     Logger::instance()->log("Raytrace requested.");
 
-    // identity matrix
-    double matrix[] = {1, 0, 0, 0,
-                       0, 1, 0, 0,
-                       0, 0, 1, 0,
-                       0, 0, 0, 1};
     // empty double** pointer for the points, will be filled in the raytrace
     double** points;
     // corresponding number of points
     int n_points;
 
-    CameraParameters current_params(m_cam_params);
-    // prepare current camera params for the raytrace from pose
-    current_params.setPose(request.pose);
-    
     // actual raytrace
-    m_raytracer->simulatePointCloud(&current_params, matrix, points, n_points);
+    m_raytracer->simulatePointCloud(&m_cam_params, request.pose, points, n_points);
  
     // prepare answer message
     boost::shared_lock<boost::shared_mutex> lock(m_mutex);
