@@ -13,6 +13,8 @@
 #define MESH_PUBLISHER_H
 
 #include <string>
+#include <fstream>
+
 #include "amcl6d_tools/Logger.h"
 
 #include "io/ModelFactory.hpp" 
@@ -26,7 +28,8 @@
 #include "boost/shared_array.hpp"
 #include "boost/thread/shared_mutex.hpp"
 
-class mesh_publisher {
+class mesh_publisher
+{
 public:
 
     /**
@@ -85,7 +88,8 @@ private:
     boost::shared_mutex m_mutex;
 
     void convert_model_to_messages();
-
+    
+    bool mesh_exists(std::string mesh);
 };
 
 #endif // MESH_PUBLISHER_H
