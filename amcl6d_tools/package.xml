@@ -12,6 +12,9 @@
 
     However, it needs the I/O tools of meshing.pg2013 to run the 
     mesh publisher.
+
+    Also to visualize the meshes as meshes rather than point clouds
+    you should use the rviz_mesh_plugin .
   </description>
 
   <maintainer email="shoeffner@uos.de">Sebastian Höffner</maintainer>
@@ -33,6 +36,8 @@
   <build_depend>roscpp</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>libboost_system</build_depend>
+  <build_depend>libboost_thread</build_depend>
+  <build_depend>meshing.pg2013</build_depend>
 
   <run_depend>std_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
@@ -42,5 +47,7 @@
   <run_depend>roscpp</run_depend>
   <run_depend>tf</run_depend>
   <run_depend>libboost_system</run_depend>
+  <run_depend>libboost_thread</run_depend>
+  <run_depend>meshing.pg2013</run_depend>
 
 </package>

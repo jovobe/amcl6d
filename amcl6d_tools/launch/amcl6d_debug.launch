@@ -8,6 +8,10 @@
     <param name="raytrace_frame"    value ="world" />
     <node  name="raytracer_service" pkg   ="cgal_raytracer" 
            type="raytracer_service" output="screen" />
+    
+    <param name="service" value="RaytraceAtPose" />
+    <node  name="raytracer_client"  pkg  ="amcl6d_tools"
+           type="raytracer_client" output="screen" />
 
     <!-- used for dynamic reconfiguration 
          - might also be used for mesh visualization

@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 generate_dynamic_reconfigure_options(
     cfg/mesh_publisher.cfg
+    cfg/raytracer_client.cfg
 )
 
 add_message_files(
@@ -37,7 +38,12 @@ generate_messages(
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES lvr_logger
-    CATKIN_DEPENDS message_runtime
+    CATKIN_DEPENDS 
+        message_runtime
+        std_msgs
+        geometry_msgs
+        sensor_msgs
+        roscpp
 )
 
 # this is because meshing.pg2013 is not catkinized
@@ -75,3 +81,17 @@ target_link_libraries(mesh_publisher
     ${Boost_LIBRARIES}
 )
 
+add_executable(raytracer_client
+    src/raytracer_client.cpp
+)
+
+add_dependencies(raytracer_client
+    cgal_raytracer_gencpp
+    ${PROJECT_NAME}_gencfg
+)
+
+target_link_libraries(raytracer_client
+    lvr_logger
+    ${catkin_LIBRARIES}
+    ${Boost_LIBRARIES}
+)
