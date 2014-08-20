@@ -1,15 +1,28 @@
 <?xml version="1.0"?>
 <launch>
-    <param name="topic" value="map_mesh" />
-    <node name="map_publisher" pkg="amcl6d_tools" 
-          type="mesh_publisher" output="screen" />
+    <param name="topic"          value ="map_mesh" />
+    <node  name="map_publisher"  pkg   ="amcl6d_tools" 
+           type="mesh_publisher" output="screen" />
       
-    <param name="mesh_topic" value="map_mesh" />
-    <param name="raytrace_frame" value="world" />
-    <node name="raytracer_service" pkg="cgal_raytracer" 
-          type="raytracer_service" output="screen" />
-      
+    <param name="mesh_topic"        value ="map_mesh" />
+    <param name="raytrace_frame"    value ="world" />
+    <node  name="raytracer_service" pkg   ="cgal_raytracer" 
+           type="raytracer_service" output="screen" />
+
+    <!-- used for dynamic reconfiguration 
+         - might also be used for mesh visualization
+         due to its rviz-plugin -->
     <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui" />
-    
+
+    <!-- mesh visualization - make sure you use the 
+         rviz_mesh_plugin, otherwise you can still
+         fallback to the pointcloud -->
     <node name="rviz" pkg="rviz" type="rviz" />
+
+    <!-- for some meshes this might be useful
+         - maybe this should be built in one day to be 
+         able to also reconfigure it -->
+    <node name="mesh_transform" pkg="tf" 
+          type="static_transform_publisher"
+          args="0 0 0 0 0 1.5707963267 world mesh 100" />
 </launch>
