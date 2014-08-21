@@ -11,7 +11,6 @@
 namespace amcl6d_tools
 {
     // bit masks for easier comparison in callback
-    const uint32_t INIT             =  -1;
     const uint32_t NO_CHANGE        =   0;
     const uint32_t POS_X            =   1;
     const uint32_t POS_Y            =   2;
@@ -59,22 +58,21 @@ namespace amcl6d_tools
         {
             return;
         }
-
-        current_pose.pose.position.x = (level & (POS_X | INIT)) != 0?
+        current_pose.pose.position.x = (level & POS_X) != 0 || level == -1?
                                   config.position_x : current_pose.pose.position.x;
-        current_pose.pose.position.y = (level & (POS_Y | INIT)) != 0?
+        current_pose.pose.position.y = (level & POS_Y) != 0 || level == -1?
                                   config.position_y : current_pose.pose.position.y;
-        current_pose.pose.position.z = (level & (POS_Z | INIT)) != 0?
+        current_pose.pose.position.z = (level & POS_Z) != 0 || level == -1?
                                   config.position_z : current_pose.pose.position.z;
         
-        if((level & (ORIENTATION_TYPE | INIT)) != 0)
+        if((level & ORIENTATION_TYPE) != 0 || level == -1)
         {
             orientation_type = config.type;
         }
 
-        if((level & (ANGLE_TYPE | INIT)) != 0)
+        if((level & ANGLE_TYPE) != 0 || level == -1)
         {
-            angle_type = config.angle;
+            angle_type       = config.angle;
             angle_conversion = angle_type == DEG? M_PI / 180 : 1;
         }
 
@@ -86,13 +84,13 @@ namespace amcl6d_tools
                    q1 = current_pose.pose.orientation.y,
                    q2 = current_pose.pose.orientation.z, 
                    q3 = current_pose.pose.orientation.w;
-            double yaw   = (level & (ORIENT_X | INIT)) != 0?
+            double yaw   = (level & ORIENT_X) != 0 || level == -1?
                               config.orientation_x * angle_conversion
                             : atan((2*q0*q1+q2*q3)/(1-2*(q1*q1+q2*q2)));
-            double pitch = (level & (ORIENT_Y | INIT)) != 0?
+            double pitch = (level & ORIENT_Y) != 0 || level == -1?
                               config.orientation_y * angle_conversion
                             : asin(2*(q0*q2-q3*q1));
-            double roll  = (level & (ORIENT_Z | INIT)) != 0?
+            double roll  = (level & ORIENT_Z) != 0 || level == -1?
                               config.orientation_z * angle_conversion
                             : atan((2*q0*q3+q1*q2)/(1-2*(q2*q2+q3*q3)));
 
@@ -113,22 +111,28 @@ namespace amcl6d_tools
         else
         {
             ROS_INFO("using quaternions");
-            current_pose.pose.orientation.x = (level & (ORIENT_X | INIT)) != 0?
+            current_pose.pose.orientation.x = (level & ORIENT_X) != 0 || level == -1?
                                        config.orientation_x * angle_conversion
                                      : current_pose.pose.orientation.x;
-            current_pose.pose.orientation.y = (level & (ORIENT_Y | INIT)) != 0?
+            current_pose.pose.orientation.y = (level & ORIENT_Y) != 0 || level == -1?
                                        config.orientation_y * angle_conversion
                                      : current_pose.pose.orientation.x;
-            current_pose.pose.orientation.z = (level & (ORIENT_Z | INIT)) != 0?
+            current_pose.pose.orientation.z = (level & ORIENT_Z) != 0 || level == -1?
                                        config.orientation_z * angle_conversion
                                      : current_pose.pose.orientation.x;
-            current_pose.pose.orientation.w = (level & (ORIENT_W | INIT)) != 0?
+            current_pose.pose.orientation.w = (level & ORIENT_W) != 0 || level == -1?
                                        config.orientation_w * angle_conversion
                                      : current_pose.pose.orientation.w;
         }
+        
+        if(level == -1)
+        {
+            last_pose = current_pose;
+            return;
+        }
 
         // raytrace toggle used
-        if((level & RAYTRACE) != 0 && level != INIT)
+        if((level & RAYTRACE) != 0)
         {
             ROS_INFO("raytrace issued");
             cgal_raytracer::RaytraceAtPose srv;
@@ -144,11 +148,6 @@ namespace amcl6d_tools
             {
                 ROS_INFO("Raytrace not succesfull.");
             }
-        }
-
-        if((level & INIT) != 0)
-        {
-            last_pose = current_pose;
         }
     }
 }
