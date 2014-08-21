@@ -60,10 +60,10 @@ namespace amcl6d_tools
         }
         current_pose.pose.position.x = (level & POS_X) != 0 || level == -1?
                                   config.position_x : current_pose.pose.position.x;
-        current_pose.pose.position.y = (level & POS_Y) != 0 || level == -1?
-                                  config.position_y : current_pose.pose.position.y;
-        current_pose.pose.position.z = (level & POS_Z) != 0 || level == -1?
-                                  config.position_z : current_pose.pose.position.z;
+        current_pose.pose.position.z = (level & POS_Y) != 0 || level == -1?
+                                  config.position_y : current_pose.pose.position.z;
+        current_pose.pose.position.y = (level & POS_Z) != 0 || level == -1?
+                                  config.position_z : current_pose.pose.position.y;
         
         if((level & ORIENTATION_TYPE) != 0 || level == -1)
         {
@@ -102,11 +102,13 @@ namespace amcl6d_tools
             double sy = sin(yaw / 2);
             double sp = sin(pitch / 2);
             double sr = sin(roll / 2);
-
+            std::cout << "before: " << current_pose.pose << std::endl;
             current_pose.pose.orientation.x = sy * sp * cr + cy * cp * sr;
-            current_pose.pose.orientation.y = sy * cp * cr + cy * sp * sr;
-            current_pose.pose.orientation.z = cy * sp * cr - sy * cp * sr;
+            current_pose.pose.orientation.z = sy * cp * cr + cy * sp * sr;
+            current_pose.pose.orientation.y = - cy * sp * cr + sy * cp * sr;
             current_pose.pose.orientation.w = cy * cp * cr - sy * sp * sr;
+            std::cout << "after:  " << current_pose.pose << std::endl;
+
         }
         else
         {
@@ -172,11 +174,11 @@ int main(int argc, char** argv)
     amcl6d_tools::cur_pose_pub = nh.advertise<geometry_msgs::PoseStamped>("man_cur_pose", 1000, true);
 
     // initialize last_pose with current_pose pose and last_result with 0 points
-    amcl6d_tools::last_result.header.frame_id = "mesh";
+    amcl6d_tools::last_result.header.frame_id = "rt_frame";
     amcl6d_tools::last_result.points.resize(0);
 
-    amcl6d_tools::current_pose.header.frame_id = "world";
-    amcl6d_tools::last_pose.header.frame_id = "world";
+    amcl6d_tools::current_pose.header.frame_id = "poses";
+    amcl6d_tools::last_pose.header.frame_id = "poses";
     
     ros::Rate loop_rate(10);
     while(ros::ok())

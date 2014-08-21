@@ -12,7 +12,7 @@
 raytracer_service::raytracer_service() 
 {
     m_raytracer = new CGALRaytracer();
-    m_frame = "world";
+    m_frame = "rt_frame";
     m_mesh_received = false;
 }
 
@@ -85,7 +85,7 @@ void raytracer_service::reconfigure_callback(
     m_cam_params.reconfigure(config, level);
     
     boost::unique_lock<boost::shared_mutex> lock(m_mutex);
-    m_frame = config.rt_frame.compare("")? "world" : config.rt_frame;
+    m_frame = config.rt_frame.compare("")? "rt_frame" : config.rt_frame;
 }
 
 bool raytracer_service::has_mesh()

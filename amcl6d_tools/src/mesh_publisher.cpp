@@ -33,7 +33,7 @@ void mesh_publisher::reconfigure_callback(
         amcl6d_tools::mesh_publisherConfig &config, 
         uint32_t level)
 {
-    replace_frame(config.frame.compare("")? config.frame : "mesh");
+    replace_frame(config.frame.compare("")? config.frame : "mesh_map");
     Logger::instance()->logX("ss","Current frame:",m_frame.c_str());
     Logger::instance()->logX("si","level:",(int)level);
     std::string home_dir(getenv("HOME"));
