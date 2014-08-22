@@ -1,27 +1,11 @@
 run with (if needed change parameters in .launch files)
 
-roslaunch amcl6d_tools amcl6d.launch
-or
 roslaunch amcl6d_tools amcl6d_debug.launch
 
-reconfigure cameraparameters with:
-roslaunch lqt_gui lqt_gui
-
-send test pose with:
-rosservice call /raytrace_at_pose "{pose: {position: {x: 0, y: 0, z: 0}, orientation: {x: 0, y: 0, z: 0, w: 1} } }"
-
 TODO:
-roslvr compatibility (use messages to roslvr pkg instead of amcl6d_tools -> change code accordingly
-                      -> difficult because of wet/dry compatibility)
+camera rotation seems wrong?
 
-simple raytrace requester (dynamically reconfigurable pose, on reconfigure cb requests a raytrace and publishes the received pointcloud for visualization)
-
-amcl6d obviously
+amcl6d
 
 robot implementation
-
-
-
-No R access to rviz_mesh_plugin!
-
 
