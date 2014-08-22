@@ -34,10 +34,11 @@
   <build_depend>message_generation</build_depend>
   <build_depend>lvr</build_depend>
   <build_depend>roscpp</build_depend>
-  <build_depend>tf</build_depend>
   <build_depend>libboost_system</build_depend>
   <build_depend>libboost_thread</build_depend>
   <build_depend>meshing.pg2013</build_depend>
+  <build_depend>eigen3</build_depend>
+  <build_depend>eigen_conversions</build_depend>
 
   <run_depend>std_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
@@ -45,9 +46,9 @@
   <run_depend>message_runtime</run_depend>
   <run_depend>lvr</run_depend>  
   <run_depend>roscpp</run_depend>
-  <run_depend>tf</run_depend>
   <run_depend>libboost_system</run_depend>
   <run_depend>libboost_thread</run_depend>
   <run_depend>meshing.pg2013</run_depend>
+  <run_depend>eigen_conversions</run_depend>
 
 </package>

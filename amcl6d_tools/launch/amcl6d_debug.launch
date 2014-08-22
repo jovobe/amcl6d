@@ -23,10 +23,17 @@
          fallback to the pointcloud -->
     <node name="rviz" pkg="rviz" type="rviz" />
 
-    <!-- for some meshes this might be useful
-         - maybe this should be built in one day to be 
-         able to also reconfigure it -->
-    <node name="mesh_transform" pkg="tf" 
+    <!-- transformations to provide the different frames -->
+    <node name="mesh_transform"     pkg="tf" 
           type="static_transform_publisher"
-          args="0 0 0 0 0 1.5707963267 world mesh 100" />
+          args="0 0 0 0 0 0 world map_mesh 100" />
+    <node name="mesh_map_transform" pkg="tf"
+          type="static_transform_publisher"
+          args="0 0 0 0 0 0 world poses 100" />
+    <node name="rt_frame_transform" pkg="tf"
+          type="static_transform_publisher"
+          args="0 0 0 0 0 0 world rt_frame 100" />
+    <node name="poses_transform"    pkg="tf"
+          type="static_transform_publisher"
+          args="0 0 0 0 0 0 world poses 100" />
 </launch>

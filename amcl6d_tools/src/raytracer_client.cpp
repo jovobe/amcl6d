@@ -8,33 +8,31 @@
 #include "dynamic_reconfigure/server.h"
 #include "amcl6d_tools/raytracer_clientConfig.h"
 
+#include <Eigen/Geometry>
+#include <eigen_conversions/eigen_msg.h>  
+
+#include <iostream>
+
 namespace amcl6d_tools
 {
     // bit masks for easier comparison in callback
-    const uint32_t NO_CHANGE        =   0;
-    const uint32_t POS_X            =   1;
-    const uint32_t POS_Y            =   2;
-    const uint32_t POS_Z            =   4;
-    const uint32_t ORIENT_X         =   8;
-    const uint32_t ORIENT_Y         =  16;
-    const uint32_t ORIENT_Z         =  32;
-    const uint32_t ORIENT_W         =  64;
-    const uint32_t ORIENTATION_TYPE = 128;
-    const uint32_t ANGLE_TYPE       = 256;
-    const uint32_t RAYTRACE         = 512;
+    const uint32_t NO_CHANGE =   0;
+    const uint32_t POS_X     =   1;
+    const uint32_t POS_Y     =   2;
+    const uint32_t POS_Z     =   4;
+    const uint32_t YAW       =   8;
+    const uint32_t PITCH     =  16;
+    const uint32_t ROLL      =  32;
+    const uint32_t RAYTRACE  = 512;
 
-    const int EULER      = 0;
-    const int QUATERNION = 1;
-    int orientation_type = 0;
+    double angle_conversion = M_PI / 180;
 
-    const int RAD = 0;
-    const int DEG = 1;
-    int angle_type = 0;
-    double angle_conversion = 1;
-
-    double current_yaw;
-    double current_pitch;
-    double current_roll;
+    double pos_x = 0;
+    double pos_y = 0;
+    double pos_z = 0;
+    double yaw   = 0;
+    double pitch = 0;
+    double roll  = 0;
 
     geometry_msgs::PoseStamped current_pose;
 
@@ -58,74 +56,35 @@ namespace amcl6d_tools
         {
             return;
         }
-        current_pose.pose.position.x = (level & POS_X) != 0 || level == -1?
-                                  config.position_x : current_pose.pose.position.x;
-        current_pose.pose.position.z = (level & POS_Y) != 0 || level == -1?
-                                  config.position_y : current_pose.pose.position.z;
-        current_pose.pose.position.y = (level & POS_Z) != 0 || level == -1?
-                                  config.position_z : current_pose.pose.position.y;
         
-        if((level & ORIENTATION_TYPE) != 0 || level == -1)
-        {
-            orientation_type = config.type;
-        }
+        pos_x = (level & POS_X) != 0 || level == -1? config.x : pos_x;
+        pos_y = (level & POS_Y) != 0 || level == -1? config.y : pos_y;
+        pos_z = (level & POS_Z) != 0 || level == -1? config.z : pos_z;
+        
+        yaw   = (level & YAW)   != 0 || level == -1? 
+                    config.yaw   * angle_conversion : yaw;
+        pitch = (level & PITCH) != 0 || level == -1?
+                    config.pitch * angle_conversion : pitch;
+        roll  = (level & ROLL)  != 0 || level == -1?
+                    config.roll  * angle_conversion : roll;
 
-        if((level & ANGLE_TYPE) != 0 || level == -1)
-        {
-            angle_type       = config.angle;
-            angle_conversion = angle_type == DEG? M_PI / 180 : 1;
-        }
+        Eigen::Matrix3d orientation_matrix;
+        orientation_matrix = Eigen::AngleAxisd(yaw,   Eigen::Vector3d::UnitZ())
+                           * Eigen::AngleAxisd(pitch, Eigen::Vector3d::UnitY())
+                           * Eigen::AngleAxisd(roll,  Eigen::Vector3d::UnitX());
+        Eigen::Affine3d n_pose = Eigen::Translation3d(pos_x, pos_y, pos_z) 
+                               * orientation_matrix;
+       
+        /**
+        std::cout << orientation_matrix(0, 0) << ", " << orientation_matrix(1, 0) << ", "
+                  << orientation_matrix(2, 0) << std::endl
+                  << orientation_matrix(0, 1) << ", " << orientation_matrix(1, 1) << ", "
+                  << orientation_matrix(2, 1) << std::endl
+                  << orientation_matrix(0, 2) << ", " << orientation_matrix(1, 2) << ", "
+                  << orientation_matrix(2, 2) << std::endl;
+                 /**/
 
-        // use euler angles or quaternions
-        if(orientation_type == EULER)
-        {
-            // update yaw (x) / pitch (y) / roll (z)  from current quaternion or config
-            double q0 = current_pose.pose.orientation.x, 
-                   q1 = current_pose.pose.orientation.y,
-                   q2 = current_pose.pose.orientation.z, 
-                   q3 = current_pose.pose.orientation.w;
-            double yaw   = (level & ORIENT_X) != 0 || level == -1?
-                              config.orientation_x * angle_conversion
-                            : atan((2*q0*q1+q2*q3)/(1-2*(q1*q1+q2*q2)));
-            double pitch = (level & ORIENT_Y) != 0 || level == -1?
-                              config.orientation_y * angle_conversion
-                            : asin(2*(q0*q2-q3*q1));
-            double roll  = (level & ORIENT_Z) != 0 || level == -1?
-                              config.orientation_z * angle_conversion
-                            : atan((2*q0*q3+q1*q2)/(1-2*(q2*q2+q3*q3)));
-
-            // using x = yaw, y = pitch, z = roll, rotation in that order
-            ROS_INFO("using euler");
-            double cy = cos(yaw / 2);
-            double cp = cos(pitch / 2);
-            double cr = cos(roll / 2);
-            double sy = sin(yaw / 2);
-            double sp = sin(pitch / 2);
-            double sr = sin(roll / 2);
-            std::cout << "before: " << current_pose.pose << std::endl;
-            current_pose.pose.orientation.x = sy * sp * cr + cy * cp * sr;
-            current_pose.pose.orientation.z = sy * cp * cr + cy * sp * sr;
-            current_pose.pose.orientation.y = - cy * sp * cr + sy * cp * sr;
-            current_pose.pose.orientation.w = cy * cp * cr - sy * sp * sr;
-            std::cout << "after:  " << current_pose.pose << std::endl;
-
-        }
-        else
-        {
-            ROS_INFO("using quaternions");
-            current_pose.pose.orientation.x = (level & ORIENT_X) != 0 || level == -1?
-                                       config.orientation_x * angle_conversion
-                                     : current_pose.pose.orientation.x;
-            current_pose.pose.orientation.y = (level & ORIENT_Y) != 0 || level == -1?
-                                       config.orientation_y * angle_conversion
-                                     : current_pose.pose.orientation.x;
-            current_pose.pose.orientation.z = (level & ORIENT_Z) != 0 || level == -1?
-                                       config.orientation_z * angle_conversion
-                                     : current_pose.pose.orientation.x;
-            current_pose.pose.orientation.w = (level & ORIENT_W) != 0 || level == -1?
-                                       config.orientation_w * angle_conversion
-                                     : current_pose.pose.orientation.w;
-        }
+        tf::poseEigenToMsg(n_pose, current_pose.pose);
         
         if(level == -1)
         {

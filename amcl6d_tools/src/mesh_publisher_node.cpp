@@ -22,7 +22,6 @@
 
 #include <stdlib.h>
 #include "sensor_msgs/PointCloud.h"
-#include "tf/transform_broadcaster.h"
 
 #include "amcl6d_tools/mesh_publisher.h"
 
@@ -60,18 +59,10 @@ int main(int argc, char** argv)
     ros::Publisher pcl_pub   = nh.advertise<sensor_msgs::PointCloud>(
                                "mesh_point_cloud", 1000, true);
 
-    // provide transformations
-    tf::TransformBroadcaster br;
-    tf::Transform transform;
-    transform.setOrigin( tf::Vector3(0, 0, 0) );
-    transform.setRotation( tf::Quaternion(0, 0, 0, 1) );
-       
     // publish and broadcast  
     ros::Rate loop_rate(1000/30); // 30 fps
     while(ros::ok())
     {
-        br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), 
-                                              "world", mp->get_frame()));
         publisher.publish(mp->get_message());
         pcl_pub.publish(mp->get_pointcloud());
 
