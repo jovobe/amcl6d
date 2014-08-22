@@ -8,6 +8,8 @@ find_package(catkin REQUIRED COMPONENTS
     message_generation
     geometry_msgs
     sensor_msgs
+    Eigen
+    eigen_conversions
 )
 
 generate_dynamic_reconfigure_options(

@@ -100,24 +100,33 @@ void CGALRaytracer::simulatePointCloud(
 {
     // lock this, so that the map does not get modified during a raytrace
     boost::shared_lock<boost::shared_mutex> lock(m_mutex);
-
+    Eigen::Affine3d eigenPose(Eigen::Affine3d::Identity());
+    tf::poseMsgToEigen(pose, eigenPose);
+/*    double orientation[4];
+    orientation[0] = pose.orientation.x;
+    orientation[1] = pose.orientation.y;
+    orientation[2] = pose.orientation.z;
+    orientation[3] = pose.orientation.w;
+    
     double position[3];
     position[0] = pose.position.x;
     position[1] = pose.position.y;
     position[2] = pose.position.z;
-
-    double q0 = pose.orientation.x, q1 = pose.orientation.y,
+*/
+/*    double q0 = pose.orientation.x, q1 = pose.orientation.y,
            q2 = pose.orientation.z, q3 = pose.orientation.w;
     double rotEuler[3];
     rotEuler[0] = atan((2*q0*q1+q2*q3)/(1-2*(q1*q1+q2*q2)));
     rotEuler[1] = asin(2*(q0*q2-q3*q1));
     rotEuler[2] = atan((2*q0*q3+q1*q2)/(1-2*(q2*q2+q3*q3)));
 
-    double matCamPose[16];
-    EulerToMatrix4(position, rotEuler, matCamPose);
-    
+*/
+/*    double matCamPose[16];
+    QuatToMatrix4(orientation, position, matCamPose);
+ */   //EulerToMatrix4(position, rotEuler, matCamPose);
+  /*  
     // old code
-/*    // Calculate absolute pose of the camera
+    // Calculate absolute pose of the camera
     double matCamPose[16];
     MMult(matrix, cam_param->m_matrixCamOrientation, matCamPose);
     MMult(matrix, matrix, matCamPose);
@@ -150,7 +159,8 @@ void CGALRaytracer::simulatePointCloud(
     Logger::instance()->log(matFullRotation, 4, 4);
 */
     // Calculate ray origin from cam pose
-    Point ray_origin(matCamPose[12], matCamPose[13], matCamPose[14]);
+    //Point ray_origin(matCamPose[12], matCamPose[13], matCamPose[14]);
+    Point ray_origin(pose.position.x, pose.position.y, pose.position.z);
     CPoint origin(ray_origin);
 
     // Create a set of direction vectors according to the used
@@ -172,12 +182,14 @@ void CGALRaytracer::simulatePointCloud(
         {
             // Create image plane point and transform according to
             // current camera pose
-            double imagePlanePoint[3];
+//            double imagePlanePoint[3];
+            Eigen::Vector3d imagePlanePoint;
             imagePlanePoint[0] = cam_param->m_focalLength;
             imagePlanePoint[1] = y;
             imagePlanePoint[2] = z;
-
-            transformPoint(imagePlanePoint, matCamPose);
+            
+//            transformPoint(imagePlanePoint, matCamPose);
+            imagePlanePoint = eigenPose * imagePlanePoint;
 
             // Create a CGAL ray
             rayList.push_back(
@@ -185,6 +197,7 @@ void CGALRaytracer::simulatePointCloud(
                             Point(imagePlanePoint[0],
                                   imagePlanePoint[1], 
                                   imagePlanePoint[2])));
+            
         }
     }
 
