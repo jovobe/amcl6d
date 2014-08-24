@@ -7,7 +7,7 @@
  *
  *  Created: 2011-01-06
  *  Author: Thomas Wiemann
- *  Last modified: 2014-08-19
+ *  Last modified: 2014-08-24
  *  Author: Sebastian Höffner
  */
 
@@ -26,7 +26,6 @@
 #include "amcl6d_tools/Logger.h"
 #include "cgal_raytracer/CameraParameters.h"
 
-//#include "cgal_raytracer/MatrixMath.hpp"
 #include <eigen_conversions/eigen_msg.h>  
 
 #include "geometry_msgs/Pose.h"

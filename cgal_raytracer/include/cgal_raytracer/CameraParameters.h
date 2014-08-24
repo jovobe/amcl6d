@@ -8,7 +8,7 @@
  *
  *  Created: 2010-09-29
  *  Authors: Denis Meyer, Thomas Wiemann
- *  Last modified: 2014-08-19
+ *  Last modified: 2014-08-24
  *  Author: Sebastian Höffner
  */
 
@@ -21,7 +21,6 @@
 #include "amcl6d_tools/Logger.h"
 
 #include <cmath>
-#include "cgal_raytracer/MatrixMath.hpp"
 #include "cgal_raytracer/CamParamConfig.h"
 
 #include "boost/thread/shared_mutex.hpp"
@@ -66,8 +65,8 @@ public:
     double m_maxAngleH;
     double m_minAngleV;
     double m_maxAngleV;
-    int    m_resolutionV;
     int    m_resolutionH;
+    int    m_resolutionV;
     double m_focalLength;
     
     /// the plane gets calculated on the fly

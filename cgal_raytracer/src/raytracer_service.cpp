@@ -3,7 +3,7 @@
  *
  *  Created: 2014-08-18
  *  Author: Sebastian Höffner
- *  Last modified: 2014-08-19
+ *  Last modified: 2014-08-24
  *  Author: Sebastian Höffner
  */
 
@@ -107,7 +107,7 @@ int main(int argc, char** argv)
 
     // load topic
     std::string topic;
-    nh.param<std::string>("mesh_topic", topic, "mesh");
+    nh.param<std::string>("mesh_topic", topic, "map_mesh");
     Logger::instance()->logX("ss", "Topic:", topic.c_str());
 
     // set up a raytracer_service instance
