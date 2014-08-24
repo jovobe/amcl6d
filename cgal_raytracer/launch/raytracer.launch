@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-    <param name="mesh_topic" value="map_mesh" />
-    <param name="raytrace_frame" value="world" />
-    <node name="raytracer_service" pkg="cgal_raytracer" 
-          type="raytracer_service" output="screen" />
+    <param name="mesh_topic"     value="map_mesh" />
+
+    <node  name="raytracer_service" pkg="cgal_raytracer" 
+           type="raytracer_service" />
 </launch>

@@ -1,18 +1,39 @@
 <?xml version="1.0"?>
 <launch>
-    <param name="topic" value="map_mesh" />
-    <node name="map_publisher" pkg="amcl6d_tools" 
-          type="mesh_publisher" />
-      
-    <param name="mesh_topic" value="map_mesh" />
-    <node name="raytracer_service" pkg="cgal_raytracer" 
-          type="raytracer_service" />
-      
+    <!-- used in raytracer_service and mesh_publisher -->
+    <param name="mesh_topic"     value="map_mesh" />
+
+    <node  name="map_publisher"  pkg="amcl6d_tools" 
+           type="mesh_publisher" />
+
+    <node  name="raytracer_service" pkg="cgal_raytracer" 
+           type="raytracer_service" />
+
+    <!-- used in raytracer_client -->
+    <param name="service" value="RaytraceAtPose" />
+
+    <node  name="raytracer_client" pkg="amcl6d_tools"
+           type="raytracer_client" />
+
+    <!-- used for dynamic reconfiguration -->
     <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui" />
-    
+
+    <!-- mesh visualization - make sure you use the 
+         rviz_mesh_plugin, otherwise you can still
+         fallback to the pointcloud -->
     <node name="rviz" pkg="rviz" type="rviz" />
-    
-    <node name="mesh_transform" pkg="tf" 
+
+    <!-- transformations to provide the different frames -->
+    <node name="mesh_transform"     pkg="tf" 
           type="static_transform_publisher"
-          args="0 0 0 0 0 1.5707963267 world mesh 100" />
+          args="0 0 0 0 0 0 world map_mesh 100" />
+    <node name="mesh_map_transform" pkg="tf"
+          type="static_transform_publisher"
+          args="0 0 0 0 0 0 world poses 100" />
+    <node name="rt_frame_transform" pkg="tf"
+          type="static_transform_publisher"
+          args="0 0 0 0 0 0 world rt_frame 100" />
+    <node name="poses_transform"    pkg="tf"
+          type="static_transform_publisher"
+          args="0 0 0 0 0 0 world poses 100" />
 </launch>

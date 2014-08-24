@@ -1,27 +1,29 @@
 <?xml version="1.0"?>
 <launch>
-    <param name="topic"          value ="map_mesh" />
-    <node  name="map_publisher"  pkg   ="amcl6d_tools" 
+    <!-- used in raytracer_service and mesh_publisher -->
+    <param name="mesh_topic"     value="map_mesh" />
+
+    <node  name="map_publisher"  pkg="amcl6d_tools" 
            type="mesh_publisher" output="screen" />
-      
-    <param name="mesh_topic"        value ="map_mesh" />
-    <param name="raytrace_frame"    value ="world" />
-    <node  name="raytracer_service" pkg   ="cgal_raytracer" 
+
+    <node  name="raytracer_service" pkg="cgal_raytracer" 
            type="raytracer_service" output="screen" />
-    
+
+    <!-- used in raytracer_client -->
     <param name="service" value="RaytraceAtPose" />
-    <node  name="raytracer_client"  pkg  ="amcl6d_tools"
+
+    <node  name="raytracer_client" pkg="amcl6d_tools"
            type="raytracer_client" output="screen" />
 
-    <!-- used for dynamic reconfiguration 
-         - might also be used for mesh visualization
-         due to its rviz-plugin -->
-    <node name="rqt_gui" pkg="rqt_gui" type="rqt_gui" />
+    <!-- used for dynamic reconfiguration -->
+    <node name="rqt_gui" pkg="rqt_gui" 
+          type="rqt_gui" output="screen" />
 
     <!-- mesh visualization - make sure you use the 
          rviz_mesh_plugin, otherwise you can still
          fallback to the pointcloud -->
-    <node name="rviz" pkg="rviz" type="rviz" />
+    <node name="rviz" pkg="rviz" 
+          type="rviz" output="screen" />
 
     <!-- transformations to provide the different frames -->
     <node name="mesh_transform"     pkg="tf" 

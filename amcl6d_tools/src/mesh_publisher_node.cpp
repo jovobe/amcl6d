@@ -15,7 +15,7 @@
  * 
  * Created: 2014-08-15
  * Author: Sebastian Höffner
- * Last modified: 2014-08-18
+ * Last modified: 2014-08-24
  * Author: Sebastian Höffner
  */
 #include "ros/ros.h"
@@ -33,13 +33,13 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "mesh_publisher");
     ros::NodeHandle nh;
     
-    if(!nh.hasParam("topic"))
+    if(!nh.hasParam("mesh_topic"))
     {
-        ROS_INFO("Parameter 'topic' was not set, publishing to /mesh.");
+        ROS_INFO("Parameter 'mesh_topic' was not set, publishing to /mesh.");
     }
     // load topic
     std::string topic;
-    nh.param<std::string>("topic", topic, "mesh");
+    nh.param<std::string>("mesh_topic", topic, "map_mesh");
     Logger::instance()->logX("ss", "Topic:", topic.c_str());
 
     // initialize mesh publisher (loads model automatically)
