@@ -21,7 +21,7 @@
  
   <license>MIT</license>
 
-  <!-- <url type="website">http://wiki.ros.org/raytracer</url> -->
+  <!-- <url type="website">http://wiki.ros.org/amcl6d</url> -->
  
   <author email="shoeffner@uos.de">Sebastian Höffner</author>
   <author>Denis Meyer</author> 
