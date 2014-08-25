@@ -7,6 +7,9 @@
       The raytracer is built on CGAL's AABB_tree.
     
       The service server subscribes to a topic to read a mesh for the raytraces.
+
+      The mesh has to be published as a Mesh message provided in the 
+      amcl6d_tools or the lvr_tools package.
     </description>
 
     <maintainer email="shoeffner@uos.de">Sebastian Höffner</maintainer>

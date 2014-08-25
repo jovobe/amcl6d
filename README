@@ -1,10 +1,8 @@
-run with (if needed change parameters in .launch files)
+run with
 
 roslaunch amcl6d_tools amcl6d_debug.launch
 
 TODO:
-camera rotation seems wrong?
-
 amcl6d
 
 robot implementation

@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-  <param name="topic" value="map_mesh" />
-  <node name="map_publisher" pkg="amcl6d_tools" 
-        type="mesh_publisher" output="screen" />
+    <param name="mesh_topic"     value="map_mesh" />
+
+    <node  name="map_publisher"  pkg="amcl6d_tools" 
+           type="mesh_publisher" />
 </launch>

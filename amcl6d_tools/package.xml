@@ -50,5 +50,6 @@
   <run_depend>libboost_thread</run_depend>
   <run_depend>meshing.pg2013</run_depend>
   <run_depend>eigen_conversions</run_depend>
+  <run_depend>rviz_mesh_plugin</run_depend>
 
 </package>
