@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<package>
+  <name>amcl6d</name>
+  <version>0.0.0</version>
+  <description>
+      This package provides nodes for performing an
+      adaptive Monte-Carlo localization in 3D polygon maps.
+
+      It samples numerous poses into the map and simulates raytraces.
+      The results of the raytraces are compared to the input sensor
+      data from the robot, usually a kinect camera or a laser scanner.
+
+      Make sure that you configure the CamParams in the cgal_raytracer
+      package accordingly.
+
+      There are multiple example launch files provided which will
+      help to easily set up a localization.
+  </description>
+
+  <maintainer email="shoeffner@uos.de">Sebastian Höffner</maintainer>
+  
+  <license>MIT</license>
+
+  <!-- <url type="website">http://wiki.ros.org/amcl6d</url> -->
+
+  <author email="shoeffner@uos.de">Sebastian Höffner</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>eigen_conversions</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>libboost_system</build_depend>
+  <build_depend>libboost_thread</build_depend>
+  <build_depend>Eigen</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>visualization_msgs</build_depend>
+  <build_depend>amcl6d_tools</build_depend>
+
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>eigen_conversions</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>libboost_system</run_depend>
+  <run_depend>libboost_thread</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>tf</run_depend>
+  <run_depend>visualization_msgs</run_depend>
+  <run_depend>amcl6d_tools</run_depend>
+
+</package>
