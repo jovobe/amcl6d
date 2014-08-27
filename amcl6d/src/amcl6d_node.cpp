@@ -1,64 +1,86 @@
 #include "ros/ros.h"
 
 #include "visualization_msgs/MarkerArray.h"
-#include "amcl6d/particle_factory.h"
-#include "amcl6d/particle_visualizer.h"
+#include "amcl6d/pose_factory.h"
 #include "amcl6d_tools/Mesh.h"
+#include "geometry_msgs/PoseArray.h"
+#include "signal.h"
 
 namespace amcl6d {
-int num = 1000;
-    visualization_msgs::MarkerArray marker_array;
-particle_factory* pf;
-void generate() {
-    marker_array.markers.resize(num);
-    for(int i = 0; i < num; ++i)
+    int number = 10000;
+
+    pose_factory* factory = NULL;
+
+    geometry_msgs::PoseArray poses;
+
+    ros::Publisher pose_array_publisher;
+    ros::Subscriber mesh_subscriber;
+
+    amcl6d_tools::Mesh current_mesh;
+
+    void generate_poses(int number)
     {
-        marker_array.markers[i] = visualization_msgs::Marker(pf->generate_particle(i));
+        for(int i = 0; i < number; ++i)
+        {
+            poses.poses.push_back(factory->generate_random_pose());
+        }
     }
-}
 
-void remove() {
-    marker_array.markers.resize(num);
-    for(int i = 0; i < num; ++i)
+    void mesh_callback(const amcl6d_tools::Mesh::ConstPtr& message)
     {
-        marker_array.markers[i] = pf->remove_particle(i);
+        if(message->mesh.vertices.size() == current_mesh.mesh.vertices.size())
+        {
+            return;
+        }
+
+        current_mesh = amcl6d_tools::Mesh(*message.get());
+        factory->set_bounds(current_mesh);
     }
+
+    void shutdown_callback(int sig) {
+        poses.poses.clear();
+        pose_array_publisher.publish(poses);
+
+        if(factory != NULL)
+        {
+            delete factory;
+            factory = NULL;
+        }
+        ros::shutdown();
+    }
+
 }
 
-amcl6d_tools::Mesh current_mesh;
-void mesh_callback(const amcl6d_tools::Mesh::ConstPtr& message)
-{
-    if(message->mesh.vertices.size() == current_mesh.mesh.vertices.size())
-        return;
-
-    current_mesh = amcl6d_tools::Mesh(*message.get());
-    pf->set_bounds(current_mesh);
-}
-}
 int main(int argc, char** args) 
 {
     ros::init(argc, args, "amcl6d");
-    ros::NodeHandle nh;
+    ros::NodeHandle nodehandle;
+    signal(SIGINT, amcl6d::shutdown_callback);
 
+    // subscribe to mesh
+    amcl6d::mesh_subscriber = nodehandle.subscribe("map_mesh", 1000, amcl6d::mesh_callback);
 
-    // init publisher and message
-    ros::Publisher marker_pub = nh.advertise<visualization_msgs::MarkerArray>("pose_samples", 5000);
-    ros::Subscriber mesh_sub = nh.subscribe("map_mesh", 1000, amcl6d::mesh_callback);
+    // publisher for poses
+    amcl6d::pose_array_publisher = nodehandle.advertise<geometry_msgs::PoseArray>("pose_samples", 1000);
+    amcl6d::poses.header.frame_id = "world";
 
-    amcl6d::pf = new particle_factory();
+    // pose factory
+    amcl6d::factory = new pose_factory();
 
-    ros::Rate loop(50);
+    // generate poses
+    amcl6d::generate_poses(amcl6d::number);
+
+    ros::Rate loop(100);
     while(ros::ok())
-    {
-            amcl6d::generate();
-        
-        // publish message and sleep
-        marker_pub.publish(amcl6d::marker_array);
+    {   
+        // TODO this is debugging
+        amcl6d::poses.poses.clear();
+        amcl6d::generate_poses(amcl6d::number);
+        // publish poses
+        amcl6d::pose_array_publisher.publish(amcl6d::poses);
         ros::spinOnce();
         loop.sleep();
     }
-
-    delete amcl6d::pf;
 
 
     return 0;

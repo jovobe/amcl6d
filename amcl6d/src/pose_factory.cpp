@@ -1,47 +1,16 @@
-#include "amcl6d/particle_factory.h"
+#include "amcl6d/pose_factory.h"
 
-particle_factory::particle_factory()
+pose_factory::pose_factory()
 {
     m_min_x = m_min_y = m_min_z = -1;
     m_max_x = m_max_y = m_max_z = 1;
 }
     
-particle_factory::~particle_factory()
+pose_factory::~pose_factory()
 {
 }
 
-visualization_msgs::Marker particle_factory::generate_particle(int id) {
-    visualization_msgs::Marker marker;
-    marker.header.frame_id = "world";
-    marker.ns = "poses";
-    marker.id = id;
-    marker.type = visualization_msgs::Marker::ARROW;
-    marker.action = visualization_msgs::Marker::ADD;
-
-    marker.pose = generate_random_pose();
-    
-    marker.color.r = 1.0;
-    marker.color.g = 0.0;
-    marker.color.b = 1.0;
-    marker.color.a = 1.0;
-
-    marker.scale.x = 0.2;
-    marker.scale.y = 0.01;
-    marker.scale.z = 0.01;
-
-    return marker;
-}
-
-visualization_msgs::Marker particle_factory::remove_particle(int id) {
-    visualization_msgs::Marker marker;
-    marker.header.frame_id = "world";
-    marker.ns = "poses";
-    marker.id = id;
-    marker.action = visualization_msgs::Marker::DELETE;
-    return marker;
-}
-
-void particle_factory::set_bounds(amcl6d_tools::Mesh mesh)
+void pose_factory::set_bounds(amcl6d_tools::Mesh mesh)
 {
     m_min_x = m_min_y = m_min_z = std::numeric_limits<double>::max();
     m_max_x = m_max_y = m_max_z = std::numeric_limits<double>::min();
@@ -56,12 +25,12 @@ void particle_factory::set_bounds(amcl6d_tools::Mesh mesh)
     }
 }
 
-geometry_msgs::Pose particle_factory::generate_random_pose() {
+geometry_msgs::Pose pose_factory::generate_random_pose() 
+{
     geometry_msgs::Pose pose;
     pose.position.x = m_min_x + (double) rand() / RAND_MAX * (m_max_x - m_min_x);
     pose.position.y = m_min_y + (double) rand() / RAND_MAX * (m_max_y - m_min_y);
     pose.position.z = m_min_z + (double) rand() / RAND_MAX * (m_max_z - m_min_z);
-
 
     // quaternion sampling after K. Shoemake
     double u_1 = (double) rand() / RAND_MAX;

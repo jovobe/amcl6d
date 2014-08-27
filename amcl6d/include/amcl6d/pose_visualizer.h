@@ -1,5 +1,5 @@
-#ifndef PARTICLE_VISUALIZER_H
-#define PARTICLE_VISUALIZER_H
+#ifndef POSE_VISUALIZER_H
+#define POSEE_VISUALIZER_H
 
 #include "ros/ros.h"
 #include "geometry_msgs/Pose.h"
@@ -9,12 +9,12 @@
 #include <string>
 
 
-class particle_visualizer
+class pose_visualizer
 {
     public:
-        particle_visualizer(ros::NodeHandle* node_handle);
+        pose_visualizer(ros::NodeHandle* node_handle);
 
-        ~particle_visualizer();
+        ~pose_visualizer();
         
         void add_pose(int id, geometry_msgs::Pose pose);
 
@@ -25,7 +25,9 @@ class particle_visualizer
         void modify_pose(int id, geometry_msgs::Pose pose);
 
         void modify_pose(int id, geometry_msgs::PoseStamped pose);
-        
+
+        void set_global_color(double r, double g, double b, double a);
+
         void set_color(int id, double r, double g, double b);
 
         void set_color(int id, double r, double g, double b, double a);

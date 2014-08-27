@@ -1,5 +1,5 @@
-#ifndef PARTICLE_FACTORY_H
-#define PARTICLE_FACTORY_H
+#ifndef POSE_FACTORY_H
+#define POSE_FACTORY_H
 
 #include "visualization_msgs/Marker.h"
 #include "geometry_msgs/Pose.h"
@@ -7,21 +7,17 @@
 
 #include <limits>
 
-class particle_factory {
+class pose_factory {
 
 public:
-    particle_factory();
-    ~particle_factory();
+    pose_factory();
+    ~pose_factory();
 
-    visualization_msgs::Marker generate_particle(int id);
-
-    visualization_msgs::Marker remove_particle(int id);
-    
     void set_bounds(amcl6d_tools::Mesh mesh);
-private:
-
+    
     geometry_msgs::Pose generate_random_pose();
 
+private:
     double m_min_x;
     double m_max_x;
     double m_min_y;

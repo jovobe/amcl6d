@@ -25,13 +25,13 @@ include_directories(
 )
 
 
-add_executable(amcl6d_node
+add_executable(amcl6d
     src/amcl6d_node.cpp
-    src/particle_factory.cpp
-    src/particle_visualizer.cpp
+    src/pose_factory.cpp
+    src/pose_visualizer.cpp
 )
 
-target_link_libraries(amcl6d_node 
+target_link_libraries(amcl6d 
     ${catkin_LIBRARIES} 
     lvr_logger 
     ${Boost_LIBRARIES}
