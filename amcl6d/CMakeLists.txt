@@ -24,11 +24,13 @@ include_directories(
   include ${catkin_INCLUDE_DIRS}
 )
 
+set(CMAKE_CXX_FLAGS "-std=c++0x")
 
 add_executable(amcl6d
     src/amcl6d_node.cpp
     src/pose_factory.cpp
     src/pose_visualizer.cpp
+    src/amcl6d.cpp
 )
 
 target_link_libraries(amcl6d 
