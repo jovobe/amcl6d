@@ -9,7 +9,6 @@ find_package(catkin REQUIRED COMPONENTS
     sensor_msgs
     message_generation
     eigen_conversions
-    Eigen
 )
 
 generate_dynamic_reconfigure_options(
