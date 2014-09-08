@@ -34,6 +34,7 @@ int main(int argc, char** args)
     ros::Rate loop(100);
     while(ros::ok())
     {   
+//        amcl6d_node::amcl();
         amcl6d_node::amcl->publish();
 
         ros::spinOnce();
