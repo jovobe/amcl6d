@@ -6,6 +6,8 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle)
     m_pose_publisher = nodehandle.advertise<geometry_msgs::PoseArray>("pose_samples", 1000);
     m_poses.header.frame_id = "world";
     m_factory = new pose_factory();
+    m_distribution = std::normal_distribution<double>(0.0, 1.0);
+
 }
 
 amcl6d::~amcl6d() {
@@ -32,23 +34,26 @@ void amcl6d::publish()
 
 void amcl6d::update_poses()
 {
-    // TODO THIS IS CURRENTLY NOISE FREE!!
+    // TODO rotations are still noise free
     for(int i = 0; i < m_pose_samples.size(); ++i)
     {
-        m_pose_samples[i].pose.pose.position.x += m_diff_position.x();
-        m_pose_samples[i].pose.pose.position.y += m_diff_position.y();
-        m_pose_samples[i].pose.pose.position.z += m_diff_position.z();
-        Eigen::Quaterniond orientation(m_pose_samples[i].pose.pose.orientation.w,
-                                       m_pose_samples[i].pose.pose.orientation.x,
-                                       m_pose_samples[i].pose.pose.orientation.y,
-                                       m_pose_samples[i].pose.pose.orientation.z);
+        Eigen::Vector6d noise = sample();
+        m_pose_samples[i].pose.position.x += m_diff_position.x() + noise(0);
+        m_pose_samples[i].pose.position.y += m_diff_position.y() + noise(1);
+        m_pose_samples[i].pose.position.z += m_diff_position.z() + noise(2);
+        Eigen::Quaterniond orientation(m_pose_samples[i].pose.orientation.w,
+                                       m_pose_samples[i].pose.orientation.x,
+                                       m_pose_samples[i].pose.orientation.y,
+                                       m_pose_samples[i].pose.orientation.z);
         Eigen::Quaterniond n_orientation = m_diff_orientation * orientation;
-        m_pose_samples[i].pose.pose.orientation.x = n_orientation.x();
-        m_pose_samples[i].pose.pose.orientation.y = n_orientation.y();
-        m_pose_samples[i].pose.pose.orientation.z = n_orientation.z();
-        m_pose_samples[i].pose.pose.orientation.w = n_orientation.w();
         
-        m_poses.poses[i] = m_pose_samples[i].pose.pose;
+        n_orientation = n_orientation;
+        m_pose_samples[i].pose.orientation.x = n_orientation.x();
+        m_pose_samples[i].pose.orientation.y = n_orientation.y();
+        m_pose_samples[i].pose.orientation.z = n_orientation.z();
+        m_pose_samples[i].pose.orientation.w = n_orientation.w();
+        
+        m_poses.poses[i] = m_pose_samples[i].pose;
 
         // TODO raytracing, particle regeneration
     }
@@ -69,18 +74,70 @@ void amcl6d::generate_poses()
     m_poses.poses.resize(m_sample_number);
     for(int i = 0; i < m_sample_number; ++i)
     {
-        m_pose_samples[i].pose.pose = m_factory->generate_random_pose();
-        init_covariance(m_pose_samples[i].pose.covariance);
+        m_pose_samples[i].pose= m_factory->generate_random_pose();
         m_pose_samples[i].probability = 1.0 / m_sample_number;
-        m_poses.poses[i] = m_pose_samples[i].pose.pose;
+        m_poses.poses[i] = m_pose_samples[i].pose;
     }
+    init_mu();
+    init_covariance();
+}
+
+// TODO remove
+#include <iostream>
+
+Eigen::Vector6d amcl6d::sample()
+{
+    // the sampling is taken from mvnrnd in matlab:
+    /*
+       c = cholesky_factorization(covariances)
+       result = rand * c + mu;
+     */
+
+    Eigen::Vector6d values;
+    values << m_distribution(m_generator), 
+              m_distribution(m_generator),
+              m_distribution(m_generator),
+              m_distribution(m_generator),
+              m_distribution(m_generator),
+              m_distribution(m_generator);
+    // TODO remove std::cout stuff
+    std::cout << "rand:" << std::endl << values << std::endl; 
+    std::cout << "transpose" << std::endl << values.transpose()<<std::endl;
+    std::cout << "mu:" << std::endl << m_mu << std::endl; 
+    std::cout << "transpose" << std::endl << m_mu.transpose()<<std::endl;
+    std::cout << "decomp" << std::endl << m_cholesky_decomp << std::endl;
+    std::cout << "values * decomp" << std::endl << values.transpose() * m_cholesky_decomp << std::endl;
+    Eigen::Vector6d result = (values.transpose() * m_cholesky_decomp) + m_mu.transpose();
+    std::cout << "result:" << std::endl;
+    std::cout << result << std::endl;
+    return result;
+}
+
+void amcl6d::update_cholesky_decomposition()
+{
+    //m_cholesky_decomp = m_covar.llt().matrixL();
+    m_cholesky_decomp = m_covar.ldlt().matrixL();
 }
 
 // TODO Change to meaningful covariances or get them from robot
-void amcl6d::init_covariance(boost::array<double, 36> covar)
+// TODO also change initialization way to take other arguments?
+void amcl6d::init_covariance()
 {
-    covar[0*6+0] = 
-    covar[1*6+1] = covar[2*6+2] = covar[3*6+3] = covar[4*6+4] = covar[5*6+5] = 1;
+    m_covar << 1, 0, 0, 0, 0, 0,
+               0, 1, 0, 0, 0, 0,
+               0, 0, 1, 0, 0, 0,
+               0, 0, 0, 1, 0, 0,
+               0, 0, 0, 0, 1, 0,
+               0, 0, 0, 0, 0, 1;
+    update_cholesky_decomposition();
+    ROS_INFO("Updated covariances and cholesky decomposition.");
+}
+
+// TODO Change to meaningful mus or get them from robot
+void amcl6d::init_mu()
+{
+    m_mu << 0, 0, 0, 0, 0, 0;
+    ROS_INFO("Updated mu's.");
 }
 
 void amcl6d::mesh_callback(const amcl6d_tools::Mesh::ConstPtr& message)
@@ -95,7 +152,7 @@ void amcl6d::mesh_callback(const amcl6d_tools::Mesh::ConstPtr& message)
     
     generate_poses();
 }
-#include <iostream>
+
 void amcl6d::move_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
 {
     m_last_pose = geometry_msgs::Pose(m_current_pose);
