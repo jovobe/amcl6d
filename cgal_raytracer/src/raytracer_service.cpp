@@ -132,15 +132,31 @@ int main(int argc, char** argv)
     {
         ros::spinOnce();
     }
+    
+    if(ros::ok())
+    {
+        // initialize service
+        ros::ServiceServer service_server = nh.advertiseService("raytrace_at_pose", 
+                                         &raytracer_service::raytrace, rt_service);
+        Logger::instance()->log("Raytracing service ready.");
+    
+        // spin: listen to mesh changes and answer trace requests
+        bool multithreaded = true;
+        int num_threads = 8;
+        if(multithreaded)
+        {
+            // asynchronous spinner for raytrace
+            ros::AsyncSpinner async_spinner(8);
 
-    // initialize service
-    ros::ServiceServer service_server = nh.advertiseService("raytrace_at_pose", 
-                    &raytracer_service::raytrace, rt_service);
-    Logger::instance()->log("Raytracing service ready.");
-    
-    // spin: listen to mesh changes and answer trace requests
-    ros::spin();
-    
+            async_spinner.start();
+            ros::waitForShutdown();
+        }
+        else
+        {
+            ros::spin();
+        }
+    }
+
     // clean up
     delete rt_service;
     
