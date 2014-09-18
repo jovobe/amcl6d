@@ -10,16 +10,20 @@
 #include "geometry_msgs/PoseArray.h"
 #include "amcl6d_tools/Mesh.h"
 #include "amcl6d/pose_factory.h"
+#include "cgal_raytracer/raytracer_service.h"
 
 #include <eigen_conversions/eigen_msg.h>
 #include <vector>
 
 #include <boost/array.hpp>
+#include <boost/thread.hpp>
 
 #include <Eigen/Dense>
 #include <Eigen/Cholesky>
 
 #include <random>
+#include <atomic>
+#include <mutex>
 
 namespace Eigen {
     typedef Eigen::Matrix<double, 6, 1> Vector6d;
@@ -33,6 +37,12 @@ public:
         public: 
             geometry_msgs::Pose pose;
             double probability;
+
+            void lock();
+            void unlock();
+
+            // some lock to lock/unlock this sample
+//            std::mutex m_lock;
     };
 
     amcl6d(ros::NodeHandle nodehandle);
@@ -53,6 +63,8 @@ private:
     void init_mu();
     void update_cholesky_decomposition();
     Eigen::Vector6d sample();
+
+    void issue_raytrace(pose_sample* pose_sample);
 
     Eigen::Vector6d m_mu;
     Eigen::Matrix6d m_covar;
@@ -76,6 +88,10 @@ private:
 
     std::default_random_engine m_generator;
     std::normal_distribution<double> m_distribution;
+
+    std::atomic_int m_current_threads;
+
+    ros::NodeHandle m_node_handle;
 };
 
 #endif
