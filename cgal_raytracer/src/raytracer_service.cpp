@@ -40,9 +40,9 @@ bool raytracer_service::raytrace(
     m_raytracer->simulatePointCloud(&m_cam_params, request.pose, points, n_points);
  
     // prepare answer message
-    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
+//    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
     response.raytrace.header.frame_id = m_frame;
-    boost::shared_lock<boost::shared_mutex> unlock(m_mutex);
+//    boost::shared_lock<boost::shared_mutex> unlock(m_mutex);
 
     response.raytrace.points.resize(n_points);
     for(int i = 0; i < n_points; ++i)

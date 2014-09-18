@@ -34,9 +34,9 @@ void amcl6d::publish()
 
 void amcl6d::update_poses()
 {
-    // TODO rotations are still noise free
     for(int i = 0; i < m_pose_samples.size(); ++i)
     {
+        // sample noise according to covariances and update poses
         Eigen::Vector6d noise = sample();
         m_pose_samples[i].pose.position.x += m_diff_position.x() + noise(0);
         m_pose_samples[i].pose.position.y += m_diff_position.y() + noise(1);
@@ -47,7 +47,11 @@ void amcl6d::update_poses()
                                        m_pose_samples[i].pose.orientation.z);
         Eigen::Quaterniond n_orientation = m_diff_orientation * orientation;
         
-        n_orientation = n_orientation;
+        Eigen::Quaterniond rotZ(Eigen::AngleAxisd(noise(3), Eigen::Vector3d::UnitZ()));
+        Eigen::Quaterniond rotY(Eigen::AngleAxisd(noise(4), Eigen::Vector3d::UnitY()));
+        Eigen::Quaterniond rotX(Eigen::AngleAxisd(noise(5), Eigen::Vector3d::UnitX()));
+
+        n_orientation = rotX * rotY * rotZ * n_orientation;
         m_pose_samples[i].pose.orientation.x = n_orientation.x();
         m_pose_samples[i].pose.orientation.y = n_orientation.y();
         m_pose_samples[i].pose.orientation.z = n_orientation.z();
@@ -57,7 +61,20 @@ void amcl6d::update_poses()
 
         // TODO raytracing, particle regeneration
     }
+/*
+            ROS_INFO("raytrace issued");
+            cgal_raytracer::RaytraceAtPose srv;
+            srv.request.pose = current_pose.pose;
 
+            if(service_client.call(srv))
+            {
+                ROS_INFO("Raytrace successful.");
+                last_pose.pose = srv.request.pose;
+                last_result = srv.response.raytrace;
+            }
+            else
+            {
+*/
 }
 
 void amcl6d::generate_poses()
@@ -115,25 +132,23 @@ Eigen::Vector6d amcl6d::sample()
 
 void amcl6d::update_cholesky_decomposition()
 {
-    //m_cholesky_decomp = m_covar.llt().matrixL();
-    m_cholesky_decomp = m_covar.ldlt().matrixL();
+    m_cholesky_decomp = m_covar.llt().matrixL();
 }
 
-// TODO Change to meaningful covariances or get them from robot
-// TODO also change initialization way to take other arguments?
+// TODO get from robot
 void amcl6d::init_covariance()
 {
-    m_covar << 1, 0, 0, 0, 0, 0,
-               0, 1, 0, 0, 0, 0,
-               0, 0, 1, 0, 0, 0,
-               0, 0, 0, 1, 0, 0,
-               0, 0, 0, 0, 1, 0,
-               0, 0, 0, 0, 0, 1;
+    m_covar << 0.01, 0, 0, 0, 0, 0,
+               0, 0.01, 0, 0, 0, 0,
+               0, 0, 0.01, 0, 0, 0,
+               0, 0, 0, 0.01, 0, 0,
+               0, 0, 0, 0, 0.01, 0,
+               0, 0, 0, 0, 0, 0.01;
     update_cholesky_decomposition();
     ROS_INFO("Updated covariances and cholesky decomposition.");
 }
 
-// TODO Change to meaningful mus or get them from robot
+// TODO get from robot
 void amcl6d::init_mu()
 {
     m_mu << 0, 0, 0, 0, 0, 0;
