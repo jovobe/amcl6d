@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
     amcl6d_tools
     Eigen
     eigen_conversions
+    cgal_raytracer
 )
 
 catkin_package(
@@ -21,13 +22,14 @@ catkin_package(
 
 find_package(Boost COMPONENTS system thread REQUIRED)
 find_package(Eigen)
+find_package(CGAL)
 
 include_directories(
     ${catkin_INCLUDE_DIRS}
     include ${catkin_INCLUDE_DIRS}
 )
 
-set(CMAKE_CXX_FLAGS "-std=c++0x")
+set(CMAKE_CXX_FLAGS "-std=c++0x -frounding-math")
 
 add_executable(amcl6d
     src/amcl6d_node.cpp
@@ -40,5 +42,6 @@ target_link_libraries(amcl6d
     ${catkin_LIBRARIES} 
     lvr_logger 
     ${Boost_LIBRARIES}
+    CGAL
 )
 
