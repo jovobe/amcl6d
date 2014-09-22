@@ -24,6 +24,7 @@
 #include <random>
 #include <atomic>
 #include <mutex>
+#include <thread>
 
 namespace Eigen {
     typedef Eigen::Matrix<double, 6, 1> Vector6d;
@@ -34,15 +35,22 @@ class amcl6d {
 public:
 
     struct pose_sample {
-        public: 
+        public:
+            void set_pose(geometry_msgs::Pose pose);
+            geometry_msgs::Pose get_pose();
+            void update_pose(double add_x, double add_y, double add_z, Eigen::Quaterniond set_orientation);
+
+            void set_probability(double probability);
+            double get_probability();
+
+            pose_sample();
+            pose_sample(const pose_sample& copy);
+        private: 
             geometry_msgs::Pose pose;
             double probability;
 
-            void lock();
-            void unlock();
-
             // some lock to lock/unlock this sample
-//            std::mutex m_lock;
+            boost::shared_mutex m_mutex;
     };
 
     amcl6d(ros::NodeHandle nodehandle);
@@ -63,6 +71,8 @@ private:
     void init_mu();
     void update_cholesky_decomposition();
     Eigen::Vector6d sample();
+
+    void init_number_of_threads();
 
     void issue_raytrace(pose_sample* pose_sample);
 
@@ -92,6 +102,8 @@ private:
     std::atomic_int m_current_threads;
 
     ros::NodeHandle m_node_handle;
+
+    unsigned int m_number_of_threads;
 };
 
 #endif

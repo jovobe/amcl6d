@@ -1,5 +1,52 @@
 #include "amcl6d/amcl6d.h"
 
+void amcl6d::pose_sample::set_pose(geometry_msgs::Pose pose) 
+{
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);  
+    this->pose = pose;
+}
+
+geometry_msgs::Pose amcl6d::pose_sample::get_pose()
+{
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
+    return pose;
+}
+
+void amcl6d::pose_sample::set_probability(double probability)
+{
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
+    this->probability = probability;
+}
+
+double amcl6d::pose_sample::get_probability()
+{
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
+    return probability;
+}
+
+void amcl6d::pose_sample::update_pose(double add_x, double add_y, double add_z, Eigen::Quaterniond set_orientation)
+{
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
+    pose.position.x += add_x;
+    pose.position.y += add_y;
+    pose.position.z += add_z;
+    pose.orientation.x = set_orientation.x();
+    pose.orientation.y = set_orientation.y();
+    pose.orientation.z = set_orientation.z();
+    pose.orientation.w = set_orientation.w();
+}
+
+amcl6d::pose_sample::pose_sample()
+{
+
+}
+
+amcl6d::pose_sample::pose_sample(const pose_sample& copy)
+{
+    set_pose(copy.pose);
+    set_probability(copy.probability);
+}
+
 amcl6d::amcl6d(ros::NodeHandle nodehandle)
 {
     m_node_handle = nodehandle;
@@ -8,12 +55,13 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle)
     m_poses.header.frame_id = "world";
     m_factory = new pose_factory();
     m_distribution = std::normal_distribution<double>(0.0, 1.0);
+    init_number_of_threads();
 
     m_current_threads = 0;
 }
 
 amcl6d::~amcl6d() {
-    // publish cleared poses
+    // clear published poses and publish cleared poses
     clear();
     publish();
 
@@ -41,15 +89,12 @@ void amcl6d::update_poses()
         // sample noise according to covariances and update poses
         Eigen::Vector6d noise = sample();
         
-   //     m_pose_samples[i].m_lock.lock();
-
-        m_pose_samples[i].pose.position.x += m_diff_position.x() + noise(0);
-        m_pose_samples[i].pose.position.y += m_diff_position.y() + noise(1);
-        m_pose_samples[i].pose.position.z += m_diff_position.z() + noise(2);
-        Eigen::Quaterniond orientation(m_pose_samples[i].pose.orientation.w,
-                                       m_pose_samples[i].pose.orientation.x,
-                                       m_pose_samples[i].pose.orientation.y,
-                                       m_pose_samples[i].pose.orientation.z);
+        geometry_msgs::Pose sample_pose = m_pose_samples[i].get_pose();
+        Eigen::Quaterniond orientation(sample_pose.orientation.w,
+                                       sample_pose.orientation.x,
+                                       sample_pose.orientation.y,
+                                       sample_pose.orientation.z);
+        
         Eigen::Quaterniond n_orientation = m_diff_orientation * orientation;
         
         Eigen::Quaterniond rotZ(Eigen::AngleAxisd(noise(3), Eigen::Vector3d::UnitZ()));
@@ -57,14 +102,16 @@ void amcl6d::update_poses()
         Eigen::Quaterniond rotX(Eigen::AngleAxisd(noise(5), Eigen::Vector3d::UnitX()));
 
         n_orientation = rotX * rotY * rotZ * n_orientation;
-        m_pose_samples[i].pose.orientation.x = n_orientation.x();
-        m_pose_samples[i].pose.orientation.y = n_orientation.y();
-        m_pose_samples[i].pose.orientation.z = n_orientation.z();
-        m_pose_samples[i].pose.orientation.w = n_orientation.w();
         
-        m_poses.poses[i] = m_pose_samples[i].pose;
+        m_pose_samples[i].update_pose(
+                    m_diff_position.x() + noise(0),
+                    m_diff_position.y() + noise(1),
+                    m_diff_position.z() + noise(2),
+                    n_orientation
+                );
+                
+        m_poses.poses[i] = m_pose_samples[i].get_pose();
 
-     //   m_pose_samples[i].m_lock.unlock();
 
         // TODO raytracing, particle regeneration
     }
@@ -76,10 +123,11 @@ void amcl6d::update_poses()
         ROS_INFO("Still threads in progress.");
         return;
     }
+    /*
     for(int i = 0; i < m_pose_samples.size(); ++i)
     {
         boost::thread rt_thread(boost::bind(&amcl6d::issue_raytrace, this, &m_pose_samples[i]));
-    }
+    }*/
 }
 
 void amcl6d::issue_raytrace(pose_sample* pose_sample)
@@ -87,19 +135,15 @@ void amcl6d::issue_raytrace(pose_sample* pose_sample)
     // increment current threads number
     m_current_threads++;
     
-//    pose_sample->lock();
-
     ros::ServiceClient service_client = m_node_handle.serviceClient<cgal_raytracer::RaytraceAtPose>("raytrace_at_pose");
     cgal_raytracer::RaytraceAtPose srv;
-    srv.request.pose = pose_sample->pose;
+    srv.request.pose = pose_sample->get_pose();
     sensor_msgs::PointCloud pcl_result;
 
     if(service_client.call(srv))
     {
         pcl_result = srv.response.raytrace;
     }
-
-//    pose_sample->unlock();
 
     // allow new threads to be run
     m_current_threads--;
@@ -119,35 +163,16 @@ void amcl6d::generate_poses()
     m_poses.poses.resize(m_sample_number);
     for(int i = 0; i < m_sample_number; ++i)
     {
- //       m_pose_samples[i].lock();
-        m_pose_samples[i].pose = m_factory->generate_random_pose();
-        m_pose_samples[i].probability = 1.0 / m_sample_number;
-  //      m_pose_samples[i].unlock();
-        m_poses.poses[i] = m_pose_samples[i].pose;
+        m_pose_samples[i].set_pose(m_factory->generate_random_pose());
+        m_pose_samples[i].set_probability(1.0 / m_sample_number);
+        m_poses.poses[i] = m_pose_samples[i].get_pose();
     }
     init_mu();
     init_covariance();
 }
 
-void amcl6d::pose_sample::lock()
-{
-}
-
-void amcl6d::pose_sample::unlock()
-{
-}
-
-// TODO remove
-#include <iostream>
-
 Eigen::Vector6d amcl6d::sample()
 {
-    // the sampling is taken from mvnrnd in matlab:
-    /*
-       c = cholesky_factorization(covariances)
-       result = rand * c + mu;
-     */
-
     Eigen::Vector6d values;
     values << m_distribution(m_generator), 
               m_distribution(m_generator),
@@ -155,16 +180,19 @@ Eigen::Vector6d amcl6d::sample()
               m_distribution(m_generator),
               m_distribution(m_generator),
               m_distribution(m_generator);
-    // TODO remove std::cout stuff
+    
+    Eigen::Vector6d result = (values.transpose() * m_cholesky_decomp) + m_mu.transpose();
+
+    /* 
     std::cout << "rand:" << std::endl << values << std::endl; 
     std::cout << "transpose" << std::endl << values.transpose()<<std::endl;
     std::cout << "mu:" << std::endl << m_mu << std::endl; 
     std::cout << "transpose" << std::endl << m_mu.transpose()<<std::endl;
     std::cout << "decomp" << std::endl << m_cholesky_decomp << std::endl;
     std::cout << "values * decomp" << std::endl << values.transpose() * m_cholesky_decomp << std::endl;
-    Eigen::Vector6d result = (values.transpose() * m_cholesky_decomp) + m_mu.transpose();
     std::cout << "result:" << std::endl;
-    std::cout << result << std::endl;
+    std::cout << result << std::endl;*/
+
     return result;
 }
 
@@ -191,6 +219,22 @@ void amcl6d::init_mu()
 {
     m_mu << 0, 0, 0, 0, 0, 0;
     ROS_INFO("Updated mu's.");
+}
+
+void amcl6d::init_number_of_threads()
+{
+    m_number_of_threads = boost::thread::hardware_concurrency();
+    if(!m_number_of_threads)
+    {
+        ROS_INFO("No thread size found with boost");
+        m_number_of_threads = std::thread::hardware_concurrency();
+        if(!m_number_of_threads)
+        {
+            m_number_of_threads = 4;
+            ROS_INFO("Defaulting to 4 threads.");
+        }
+    }
+    ROS_INFO("%d threads will be used.", m_number_of_threads);
 }
 
 void amcl6d::mesh_callback(const amcl6d_tools::Mesh::ConstPtr& message)
