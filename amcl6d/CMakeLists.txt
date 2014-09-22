@@ -25,8 +25,9 @@ find_package(Eigen)
 find_package(CGAL)
 
 include_directories(
+    include 
     ${catkin_INCLUDE_DIRS}
-    include ${catkin_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
 )
 
 set(CMAKE_CXX_FLAGS "-std=c++0x -frounding-math")

@@ -9,6 +9,7 @@
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include "geometry_msgs/PoseArray.h"
 #include "amcl6d_tools/Mesh.h"
+#include "amcl6d_tools/concurrent_queue.h"
 #include "amcl6d/pose_factory.h"
 #include "cgal_raytracer/raytracer_service.h"
 
@@ -95,20 +96,20 @@ private:
 
     geometry_msgs::Pose m_last_pose;
     geometry_msgs::Pose m_current_pose;
-    Eigen::Vector3d    m_diff_position;
-    Eigen::Quaterniond m_diff_orientation;
+    Eigen::Vector3d     m_diff_position;
+    Eigen::Quaterniond  m_diff_orientation;
     sensor_msgs::PointCloud m_current_raytrace;
 
     std::default_random_engine m_generator;
     std::normal_distribution<double> m_distribution;
 
-    std::atomic_int m_current_threads;
-
     ros::NodeHandle m_node_handle;
 
     ros::ServiceClient m_service_client;
     unsigned int m_number_of_threads;
+    bool m_multithreaded;
 
+    amcl6d_tools::concurrent_queue<pose_sample> m_queue;
 };
 
 #endif

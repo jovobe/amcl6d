@@ -55,9 +55,11 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle)
     m_poses.header.frame_id = "world";
     m_factory = new pose_factory();
     m_distribution = std::normal_distribution<double>(0.0, 1.0);
-    init_number_of_threads();
-
-    m_current_threads = 0;
+    m_multithreaded = false;
+    if(m_multithreaded)
+    {
+        init_number_of_threads();
+    }
 
     m_service_client = m_node_handle.serviceClient<cgal_raytracer::RaytraceAtPose>("raytrace_at_pose");
 }
@@ -87,13 +89,27 @@ void amcl6d::publish()
 void amcl6d::update_poses()
 {
     // get current raytrace
-    m_current_raytrace = issue_raytrace(m_current_pose);
+    // TODO implementation for multithreading
+    if(m_multithreaded)
+    {
+    }
+    else
+    {
+        m_current_raytrace = issue_raytrace(m_current_pose);
+    }
 
     // update samples
     for(int i = 0; i < m_pose_samples.size(); ++i)
     {
-        // reinitialize probabilities (TODO: might need an update)
-        m_pose_samples[i].set_probability(m_pose_samples[i].get_probability() / (double)m_sample_number);
+        // TODO: might need an update for single thread needs implementation for singlethreads
+        if(m_multithreaded)
+        {
+
+        }
+        else
+        {
+            m_pose_samples[i].set_probability(m_pose_samples[i].get_probability() / (double)m_sample_number);
+        }
 
         // sample noise according to covariances and update poses
         Eigen::Vector6d noise = sample();
@@ -121,37 +137,42 @@ void amcl6d::update_poses()
                 
         m_poses.poses[i] = m_pose_samples[i].get_pose();
     }
-    // TODO raytracing, particle regeneration
 
-    // this could be changed to always have a specific number of threads running
-/*    if(m_current_threads != 0)
-    {
-        ROS_INFO("Still threads in progress.");
-        return;
-    }*/
-
-    // TODO for now just do all raytraces to just check if it works
-    clock_t start = clock();
-    ROS_INFO("Starting raytraces.");
-    for(int i = 0; i < m_pose_samples.size(); ++i)
-    {
-        sensor_msgs::PointCloud pcl_result = issue_raytrace(m_pose_samples[i].get_pose());
-        if(pcl_result.points.size() > 0)
+    if(m_multithreaded)
+    { // multithreaded
+        if(m_queue.empty())
         {
-            double probability = evaluate_raytrace(pcl_result);
-            ROS_INFO("Value: %f", probability);
-            m_pose_samples[i].set_probability(probability);
+            for(int i = 0; i < m_pose_samples.size(); ++i)
+            {
+                m_queue.push_back(m_pose_samples[i]);
+            }
+        }
+        else
+        {
+            ROS_DEBUG("Queue is not ready yet.");
         }
     }
-    ROS_INFO("Raytraces done.");
-    clock_t stop = clock();
-    ROS_INFO("Time elapsed: %f ms", double(stop - start) / CLOCKS_PER_SEC * 1000);
-
-    /*
-    for(int i = 0; i < m_pose_samples.size(); ++i)
-    {
-        boost::thread rt_thread(boost::bind(&amcl6d::issue_raytrace, this, &m_pose_samples[i]));
-    }*/
+    else
+    { // singlethreaded
+        // TODO change ROS_INFO to ROS_DEBUG
+        clock_t start = clock();
+        ROS_INFO("Starting raytraces.");
+        for(int i = 0; i < m_pose_samples.size(); ++i)
+        {
+            sensor_msgs::PointCloud pcl_result = issue_raytrace(m_pose_samples[i].get_pose());
+            if(pcl_result.points.size() > 0)
+            {
+                double probability = evaluate_raytrace(pcl_result);
+//                ROS_INFO("Value: %f", probability);
+                m_pose_samples[i].set_probability(probability);
+            }
+        }
+        ROS_INFO("Raytraces done.");
+        clock_t stop = clock();
+        ROS_INFO("Time elapsed: %f s", double(stop - start) / CLOCKS_PER_SEC);
+    }
+    
+    // TODO particle regeneration
 }
 
 sensor_msgs::PointCloud amcl6d::issue_raytrace(geometry_msgs::Pose pose)
@@ -171,7 +192,7 @@ sensor_msgs::PointCloud amcl6d::issue_raytrace(geometry_msgs::Pose pose)
 double amcl6d::evaluate_raytrace(sensor_msgs::PointCloud result)
 {
     double diff_squared = 0;
-    int num = std::max(m_current_raytrace.points.size(), result.points.size());
+    int num = std::min(m_current_raytrace.points.size(), result.points.size());
     for(int i = 0; i < num; i++)
     {
         diff_squared += (m_current_raytrace.points[i].x - result.points[i].x)
@@ -181,6 +202,7 @@ double amcl6d::evaluate_raytrace(sensor_msgs::PointCloud result)
                       + (m_current_raytrace.points[i].z - result.points[i].z)
                       * (m_current_raytrace.points[i].z - result.points[i].z);
     }
+   // ROS_INFO("diff_squared: %f, num: %d", diff_squared, num);
     
     return num? diff_squared / (double) num : 0;
 }
