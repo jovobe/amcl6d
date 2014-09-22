@@ -25,6 +25,7 @@
 #include <atomic>
 #include <mutex>
 #include <thread>
+#include <time.h>
 
 namespace Eigen {
     typedef Eigen::Matrix<double, 6, 1> Vector6d;
@@ -74,7 +75,8 @@ private:
 
     void init_number_of_threads();
 
-    void issue_raytrace(pose_sample* pose_sample);
+    sensor_msgs::PointCloud issue_raytrace(geometry_msgs::Pose pose);
+    double evaluate_raytrace(sensor_msgs::PointCloud pcl);
 
     Eigen::Vector6d m_mu;
     Eigen::Matrix6d m_covar;
@@ -95,6 +97,7 @@ private:
     geometry_msgs::Pose m_current_pose;
     Eigen::Vector3d    m_diff_position;
     Eigen::Quaterniond m_diff_orientation;
+    sensor_msgs::PointCloud m_current_raytrace;
 
     std::default_random_engine m_generator;
     std::normal_distribution<double> m_distribution;
@@ -103,7 +106,9 @@ private:
 
     ros::NodeHandle m_node_handle;
 
+    ros::ServiceClient m_service_client;
     unsigned int m_number_of_threads;
+
 };
 
 #endif
