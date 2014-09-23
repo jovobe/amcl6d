@@ -9,7 +9,6 @@
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include "geometry_msgs/PoseArray.h"
 #include "amcl6d_tools/Mesh.h"
-#include "amcl6d_tools/concurrent_queue.h"
 #include "amcl6d/pose_factory.h"
 #include "cgal_raytracer/raytracer_service.h"
 
@@ -74,8 +73,6 @@ private:
     void update_cholesky_decomposition();
     Eigen::Vector6d sample();
 
-    void init_number_of_threads();
-
     sensor_msgs::PointCloud issue_raytrace(geometry_msgs::Pose pose);
     double evaluate_raytrace(sensor_msgs::PointCloud pcl);
 
@@ -106,10 +103,6 @@ private:
     ros::NodeHandle m_node_handle;
 
     ros::ServiceClient m_service_client;
-    unsigned int m_number_of_threads;
-    bool m_multithreaded;
-
-    amcl6d_tools::concurrent_queue<pose_sample> m_queue;
 };
 
 #endif

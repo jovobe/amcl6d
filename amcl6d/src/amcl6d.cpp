@@ -55,11 +55,6 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle)
     m_poses.header.frame_id = "world";
     m_factory = new pose_factory();
     m_distribution = std::normal_distribution<double>(0.0, 1.0);
-    m_multithreaded = false;
-    if(m_multithreaded)
-    {
-        init_number_of_threads();
-    }
 
     m_service_client = m_node_handle.serviceClient<cgal_raytracer::RaytraceAtPose>("raytrace_at_pose");
 }
@@ -89,27 +84,14 @@ void amcl6d::publish()
 void amcl6d::update_poses()
 {
     // get current raytrace
-    // TODO implementation for multithreading
-    if(m_multithreaded)
-    {
-    }
-    else
-    {
-        m_current_raytrace = issue_raytrace(m_current_pose);
-    }
+    m_current_raytrace = issue_raytrace(m_current_pose);
 
     // update samples
+    #pragma omp parallel for
     for(int i = 0; i < m_pose_samples.size(); ++i)
     {
-        // TODO: might need an update for single thread needs implementation for singlethreads
-        if(m_multithreaded)
-        {
-
-        }
-        else
-        {
-            m_pose_samples[i].set_probability(m_pose_samples[i].get_probability() / (double)m_sample_number);
-        }
+        // TODO this might be wrong
+        m_pose_samples[i].set_probability(m_pose_samples[i].get_probability() / (double)m_sample_number);
 
         // sample noise according to covariances and update poses
         Eigen::Vector6d noise = sample();
@@ -138,39 +120,23 @@ void amcl6d::update_poses()
         m_poses.poses[i] = m_pose_samples[i].get_pose();
     }
 
-    if(m_multithreaded)
-    { // multithreaded
-        if(m_queue.empty())
+    // TODO change ROS_INFO to ROS_DEBUG
+    clock_t start = clock();
+    ROS_INFO("Starting raytraces.");
+    #pragma omp parallel for
+    for(int i = 0; i < m_pose_samples.size(); ++i)
+    {
+        sensor_msgs::PointCloud pcl_result = issue_raytrace(m_pose_samples[i].get_pose());
+        if(pcl_result.points.size() > 0)
         {
-            for(int i = 0; i < m_pose_samples.size(); ++i)
-            {
-                m_queue.push_back(m_pose_samples[i]);
-            }
-        }
-        else
-        {
-            ROS_DEBUG("Queue is not ready yet.");
+            double probability = evaluate_raytrace(pcl_result);
+//            ROS_INFO("Value: %f", probability);
+            m_pose_samples[i].set_probability(probability);
         }
     }
-    else
-    { // singlethreaded
-        // TODO change ROS_INFO to ROS_DEBUG
-        clock_t start = clock();
-        ROS_INFO("Starting raytraces.");
-        for(int i = 0; i < m_pose_samples.size(); ++i)
-        {
-            sensor_msgs::PointCloud pcl_result = issue_raytrace(m_pose_samples[i].get_pose());
-            if(pcl_result.points.size() > 0)
-            {
-                double probability = evaluate_raytrace(pcl_result);
-//                ROS_INFO("Value: %f", probability);
-                m_pose_samples[i].set_probability(probability);
-            }
-        }
-        ROS_INFO("Raytraces done.");
-        clock_t stop = clock();
-        ROS_INFO("Time elapsed: %f s", double(stop - start) / CLOCKS_PER_SEC);
-    }
+    ROS_INFO("Raytraces done.");
+    clock_t stop = clock();
+    ROS_INFO("Time elapsed: %f s", double(stop - start) / CLOCKS_PER_SEC);
     
     // TODO particle regeneration
 }
@@ -219,6 +185,7 @@ void amcl6d::generate_poses()
 
     m_pose_samples.resize(m_sample_number);
     m_poses.poses.resize(m_sample_number);
+    #pragma mop parallel for
     for(int i = 0; i < m_sample_number; ++i)
     {
         m_pose_samples[i].set_pose(m_factory->generate_random_pose());
@@ -277,22 +244,6 @@ void amcl6d::init_mu()
 {
     m_mu << 0, 0, 0, 0, 0, 0;
     ROS_INFO("Updated mu's.");
-}
-
-void amcl6d::init_number_of_threads()
-{
-    m_number_of_threads = boost::thread::hardware_concurrency();
-    if(!m_number_of_threads)
-    {
-        ROS_INFO("No thread size found with boost");
-        m_number_of_threads = std::thread::hardware_concurrency();
-        if(!m_number_of_threads)
-        {
-            m_number_of_threads = 4;
-            ROS_INFO("Defaulting to 4 threads.");
-        }
-    }
-    ROS_INFO("%d threads will be used.", m_number_of_threads);
 }
 
 void amcl6d::mesh_callback(const amcl6d_tools::Mesh::ConstPtr& message)
