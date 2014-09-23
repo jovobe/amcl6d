@@ -14,6 +14,7 @@
 
 #include <string>
 #include <fstream>
+#include <stdlib.h>
 
 #include "amcl6d_tools/Logger.h"
 

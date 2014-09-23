@@ -11,9 +11,11 @@
 
 raytracer_service::raytracer_service() 
 {
+    Logger::instance()->setPrefix("RT SERVICE - ");
     m_raytracer = new CGALRaytracer();
     m_frame = "rt_frame";
     m_mesh_received = false;
+    m_subscribe_to_map = false;
 }
 
 raytracer_service::~raytracer_service() 
@@ -40,9 +42,7 @@ bool raytracer_service::raytrace(
     m_raytracer->simulatePointCloud(&m_cam_params, request.pose, points, n_points);
  
     // prepare answer message
-//    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
     response.raytrace.header.frame_id = m_frame;
-//    boost::shared_lock<boost::shared_mutex> unlock(m_mutex);
 
     response.raytrace.points.resize(n_points);
     for(int i = 0; i < n_points; ++i)
@@ -68,14 +68,20 @@ void raytracer_service::mesh_callback(
     {
         Logger::instance()->log("New Mesh received.");
         // get mesh from the message
-        m_mesh = amcl6d_tools::Mesh(*message.get());
-        // and send it to the raytracer
-        this->m_raytracer->setMap(&m_mesh);
-        
-        // set flag to escape waiting for the first mesh
-        m_mesh_received = true;
-        Logger::instance()->log("Mesh loaded.");
+        set_mesh(amcl6d_tools::Mesh(*message.get()));
     }
+}
+
+void raytracer_service::set_mesh(amcl6d_tools::Mesh mesh)
+{
+    m_mesh = mesh;
+    
+    // and send it to the raytracer
+    this->m_raytracer->setMap(&m_mesh);
+        
+    m_mesh_received = true;
+
+    Logger::instance()->log("Mesh loaded.");
 }
 
 void raytracer_service::reconfigure_callback(
@@ -121,7 +127,13 @@ int main(int argc, char** argv)
                     rt_service, _1, _2);
     reconf_srv.setCallback(reconf_cbfun);
 
-    // subscribe to mesh topic
+    // set service client to receive the mesh
+    ros::ServiceClient map_client = nh.serviceClient<amcl6d_tools::RequestMap>("request_map");
+
+    // prepare call
+    amcl6d_tools::RequestMap srv;
+    
+    // backup to service: subscribe to mesh topic
     ros::Subscriber mesh_subscriber = nh.subscribe(topic, 1000, 
                     &raytracer_service::mesh_callback, rt_service);
 
@@ -130,9 +142,19 @@ int main(int argc, char** argv)
                              topic.c_str(), "to receive a mesh.");
     while(!rt_service->has_mesh() && ros::ok())
     {
+        if(map_client.call(srv))
+        {
+            rt_service->set_mesh(amcl6d_tools::Mesh(srv.response.map));
+            break;
+        }
         ros::spinOnce();
     }
-    
+    // once we got a map we don't need to listen to it anymore, unless we should to
+    if(!rt_service->m_subscribe_to_map)
+    {
+        mesh_subscriber.shutdown();
+    }
+
     if(ros::ok())
     {
         // initialize service
@@ -140,21 +162,11 @@ int main(int argc, char** argv)
                                          &raytracer_service::raytrace, rt_service);
         Logger::instance()->log("Raytracing service ready.");
     
-        // spin: listen to mesh changes and answer trace requests
-        bool multithreaded = true;
-        int num_threads = 8;
-        if(multithreaded)
-        {
-            // asynchronous spinner for raytrace
-            ros::AsyncSpinner async_spinner(8);
+        // asynchronous spinner for raytrace
+        ros::AsyncSpinner async_spinner(8);
 
-            async_spinner.start();
-            ros::waitForShutdown();
-        }
-        else
-        {
-            ros::spin();
-        }
+        async_spinner.start();
+        ros::waitForShutdown();
     }
 
     // clean up

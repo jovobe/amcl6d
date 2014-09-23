@@ -252,11 +252,21 @@ void amcl6d::mesh_callback(const amcl6d_tools::Mesh::ConstPtr& message)
     {
         return;
     }
-    m_mesh = amcl6d_tools::Mesh(*message.get());
+    set_mesh(amcl6d_tools::Mesh(*message.get()));
+}
+
+void amcl6d::set_mesh(amcl6d_tools::Mesh mesh)
+{
+    m_mesh = mesh;
     m_factory->set_bounds(m_mesh);
-    // TODO pose reset: avoid update when first pose arrives later!
-    
+
+    m_has_mesh = true;
     generate_poses();
+}
+
+bool amcl6d::has_mesh()
+{
+    return m_has_mesh;
 }
 
 void amcl6d::move_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_msg)

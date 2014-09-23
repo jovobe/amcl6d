@@ -20,7 +20,6 @@
  */
 #include "ros/ros.h"
 
-#include <stdlib.h>
 #include "sensor_msgs/PointCloud.h"
 
 #include "amcl6d_tools/mesh_publisher.h"
@@ -60,7 +59,7 @@ int main(int argc, char** argv)
                                "mesh_point_cloud", 1000, true);
 
     // publish and broadcast  
-    ros::Rate loop_rate(1000/30); // 30 fps
+    ros::Rate loop_rate(15000); // 15 seconds
     while(ros::ok())
     {
         publisher.publish(mp->get_message());

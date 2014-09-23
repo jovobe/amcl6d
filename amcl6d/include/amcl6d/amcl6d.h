@@ -61,10 +61,13 @@ public:
     void mesh_callback(const amcl6d_tools::Mesh::ConstPtr& message);
     void move_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_msg);
 
+    void set_mesh(amcl6d_tools::Mesh mesh);
+
     void publish(); 
 
     void clear();
 
+    bool has_mesh();
     
 private:
     void update_poses();
@@ -103,6 +106,8 @@ private:
     ros::NodeHandle m_node_handle;
 
     ros::ServiceClient m_service_client;
+
+    bool m_has_mesh; 
 };
 
 #endif

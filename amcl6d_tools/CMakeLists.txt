@@ -28,6 +28,11 @@ add_message_files(
     TriangleMeshGeometry.msg
 )
 
+add_service_files(
+    FILES
+    RequestMap.srv
+)
+
 generate_messages(
     DEPENDENCIES 
     std_msgs
@@ -77,6 +82,23 @@ add_dependencies(mesh_publisher
 target_link_libraries(mesh_publisher
     lvr_logger 
     ${catkin_LIBRARIES} 
+    $ENV{HOME}/ros-hydro/dry/meshing.pg2013/lib/liblvr.so # workaround
+    ${Boost_LIBRARIES}
+)
+
+add_executable(map_service
+    src/mesh_publisher_service.cpp
+    src/mesh_publisher.cpp
+)
+
+add_dependencies(map_service
+    ${PROJECT_NAME}_gencfg
+    ${PROJECT_NAME}_gencpp
+)
+
+target_link_libraries(map_service
+    lvr_logger
+    ${catkin_LIBRARIES}
     $ENV{HOME}/ros-hydro/dry/meshing.pg2013/lib/liblvr.so # workaround
     ${Boost_LIBRARIES}
 )

@@ -29,6 +29,7 @@
 #include "sensor_msgs/PointCloud.h"
 #include "geometry_msgs/Pose.h"
 #include "amcl6d_tools/Mesh.h"
+#include "amcl6d_tools/RequestMap.h"
 
 #include "cgal_raytracer/CGALRaytracer.h"
 #include "cgal_raytracer/CameraParameters.h"
@@ -88,6 +89,15 @@ public:
                               uint32_t level);
     
     /**
+     * A setter that sets the mesh and also propagates it to the underlying
+     * raytracer.
+     *
+     * It also sets the m_mesh_received flag to true, so that has_mesh()
+     * should return true.
+     */
+    void set_mesh(amcl6d_tools::Mesh mesh);
+
+    /**
      * Returns true as soon as the service loaded a mesh from the subscribed
      * topic. By default this is /mesh, but can be changed with the parameter
      * mesh_topic.
@@ -99,6 +109,7 @@ public:
     /// the frame for the sensor_msgs::PointCloud
     std::string m_frame;
 
+    bool m_subscribe_to_map;
 private:
 
     /// the current mesh to work with, the raytracer and the camera parameters
