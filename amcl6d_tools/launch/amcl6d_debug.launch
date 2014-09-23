@@ -1,10 +1,14 @@
 <?xml version="1.0"?>
 <launch>
-    <!-- used in raytracer_service and mesh_publisher -->
-    <param name="mesh_topic"     value="map_mesh" />
+    <!-- used in raytracer_service, mesh_publisher and 
+         map_service -->
+    <param name="mesh_topic"    value="map_mesh" />
 
-    <node  name="map_publisher"  pkg="amcl6d_tools" 
-           type="mesh_publisher" output="screen" />
+    <node  name="map_service"  pkg="amcl6d_tools" 
+           type="map_service" output="screen" />
+
+    <!--node  name="mesh_publisher" pkg="amcl6d_tools"
+           type="mesh_publisher" output="screen" /-->
 
     <node  name="raytracer_service" pkg="cgal_raytracer" 
            type="raytracer_service" output="screen" />
@@ -23,7 +27,7 @@
          rviz_mesh_plugin, otherwise you can still
          fallback to the pointcloud -->
     <node name="rviz" pkg="rviz" 
-          type="rviz" output="screen" />
+          type="rviz" />
 
     <!-- transformations to provide the different frames -->
     <node name="mesh_transform"     pkg="tf" 
