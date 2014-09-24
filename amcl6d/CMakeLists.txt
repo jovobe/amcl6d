@@ -20,10 +20,15 @@ catkin_package(
     CATKIN_DEPENDS dynamic_reconfigure eigen_conversions geometry_msgs roscpp sensor_msgs tf visualization_msgs amcl6d_tools
 )
 
+# common libraries
 find_package(Boost COMPONENTS system thread REQUIRED)
 find_package(Eigen)
 find_package(CGAL)
 find_package(OpenMP REQUIRED)
+
+# manually added libraries
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
+#find_package(Flann REQUIRED)
 
 if(OPENMP_FOUND)
     message("OpenMP optimizations available")
@@ -34,6 +39,7 @@ include_directories(
     include 
     ${catkin_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
+    #    ${Flann_INCLUDE_DIRS}
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -frounding-math")
@@ -50,5 +56,6 @@ target_link_libraries(amcl6d
     lvr_logger 
     ${Boost_LIBRARIES}
     CGAL
+    #   ${Flann_LIBRARIES}
 )
 
