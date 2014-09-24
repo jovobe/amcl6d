@@ -7,8 +7,6 @@
 namespace amcl6d_node {
     amcl6d* amcl = NULL;
 
-    bool subscribe_to_mesh = false;
-
     void shutdown_callback(int sig) {
         amcl->clear();
         amcl->publish();
@@ -42,10 +40,6 @@ int main(int argc, char** args)
             amcl6d_node::amcl->set_mesh(map); 
         }
         ros::spinOnce();
-    }
-    if(!amcl6d_node::subscribe_to_mesh)
-    {
-        mesh_subscriber.shutdown();
     }
 
     ros::Subscriber move_subscriber = nodehandle.subscribe("man_cur_pose", 1000, &amcl6d::move_callback, amcl6d_node::amcl);

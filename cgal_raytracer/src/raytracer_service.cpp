@@ -15,7 +15,6 @@ raytracer_service::raytracer_service()
     m_raytracer = new CGALRaytracer();
     m_frame = "rt_frame";
     m_mesh_received = false;
-    m_subscribe_to_map = false;
 }
 
 raytracer_service::~raytracer_service() 
@@ -148,11 +147,6 @@ int main(int argc, char** argv)
             break;
         }
         ros::spinOnce();
-    }
-    // once we got a map we don't need to listen to it anymore, unless we should to
-    if(!rt_service->m_subscribe_to_map)
-    {
-        mesh_subscriber.shutdown();
     }
 
     if(ros::ok())
