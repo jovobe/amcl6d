@@ -46,12 +46,14 @@ public:
 
             void set_raytrace(sensor_msgs::PointCloud pcl);
             sensor_msgs::PointCloud get_raytrace();
+            
+            void normalize_raytrace();
 
             pose_sample();
             pose_sample(const pose_sample& copy);
         private: 
-            geometry_msgs::Pose pose;
-            double probability;
+            geometry_msgs::Pose m_pose;
+            double m_probability;
             sensor_msgs::PointCloud m_raytrace;
 
             // some lock to lock/unlock this sample

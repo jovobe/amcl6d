@@ -3,13 +3,13 @@
 void amcl6d::pose_sample::set_pose(geometry_msgs::Pose pose) 
 {
     boost::unique_lock<boost::shared_mutex> lock(m_mutex);  
-    this->pose = pose;
+    this->m_pose = pose;
 }
 
 geometry_msgs::Pose amcl6d::pose_sample::get_pose()
 {
     boost::shared_lock<boost::shared_mutex> lock(m_mutex);
-    return this->pose;
+    return this->m_pose;
 }
 
 void amcl6d::pose_sample::set_raytrace(sensor_msgs::PointCloud pcl)
@@ -27,25 +27,35 @@ sensor_msgs::PointCloud amcl6d::pose_sample::get_raytrace()
 void amcl6d::pose_sample::set_probability(double probability)
 {
     boost::unique_lock<boost::shared_mutex> lock(m_mutex);
-    this->probability = probability;
+    this->m_probability = probability;
 }
 
 double amcl6d::pose_sample::get_probability()
 {
     boost::shared_lock<boost::shared_mutex> lock(m_mutex);
-    return this->probability;
+    return this->m_probability;
 }
 
 void amcl6d::pose_sample::update_pose(double add_x, double add_y, double add_z, Eigen::Quaterniond set_orientation)
 {
     boost::unique_lock<boost::shared_mutex> lock(m_mutex);
-    pose.position.x += add_x;
-    pose.position.y += add_y;
-    pose.position.z += add_z;
-    pose.orientation.x = set_orientation.x();
-    pose.orientation.y = set_orientation.y();
-    pose.orientation.z = set_orientation.z();
-    pose.orientation.w = set_orientation.w();
+    m_pose.position.x += add_x;
+    m_pose.position.y += add_y;
+    m_pose.position.z += add_z;
+    m_pose.orientation.x = set_orientation.x();
+    m_pose.orientation.y = set_orientation.y();
+    m_pose.orientation.z = set_orientation.z();
+    m_pose.orientation.w = set_orientation.w();
+}
+
+#include <iostream>
+void amcl6d::pose_sample::normalize_raytrace()
+{
+    Eigen::Affine3d eigenPose(Eigen::Affine3d::Identity());
+    tf::poseMsgToEigen(this->m_pose, eigenPose);
+//    std::cout << eigenPose << std::endl;
+
+
 }
 
 amcl6d::pose_sample::pose_sample()
@@ -55,8 +65,9 @@ amcl6d::pose_sample::pose_sample()
 
 amcl6d::pose_sample::pose_sample(const pose_sample& copy)
 {
-    set_pose(copy.pose);
-    set_probability(copy.probability);
+    set_pose(copy.m_pose);
+    set_probability(copy.m_probability);
+    set_raytrace(copy.m_raytrace);
 }
 
 amcl6d::amcl6d(ros::NodeHandle nodehandle)
@@ -97,6 +108,7 @@ void amcl6d::update_poses()
 {
     // get current raytrace
     m_current_pose.set_raytrace(issue_raytrace(m_current_pose.get_pose()));
+    m_current_pose.normalize_raytrace();
 
     // update samples
     #pragma omp parallel for
@@ -142,6 +154,7 @@ void amcl6d::update_poses()
         if(pcl_result.points.size() > 0)
         {
             m_pose_samples[i].set_raytrace(pcl_result);
+            m_pose_samples[i].normalize_raytrace();
             double probability = evaluate_sample(m_pose_samples[i]);
 //            ROS_INFO("Value: %f", probability);
             m_pose_samples[i].set_probability(probability);
