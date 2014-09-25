@@ -44,11 +44,15 @@ public:
             void set_probability(double probability);
             double get_probability();
 
+            void set_raytrace(sensor_msgs::PointCloud pcl);
+            sensor_msgs::PointCloud get_raytrace();
+
             pose_sample();
             pose_sample(const pose_sample& copy);
         private: 
             geometry_msgs::Pose pose;
             double probability;
+            sensor_msgs::PointCloud m_raytrace;
 
             // some lock to lock/unlock this sample
             boost::shared_mutex m_mutex;
@@ -77,7 +81,7 @@ private:
     Eigen::Vector6d sample();
 
     sensor_msgs::PointCloud issue_raytrace(geometry_msgs::Pose pose);
-    double evaluate_raytrace(sensor_msgs::PointCloud pcl);
+    double evaluate_sample(pose_sample sample);
 
     Eigen::Vector6d m_mu;
     Eigen::Matrix6d m_covar;
@@ -95,10 +99,10 @@ private:
     amcl6d_tools::Mesh m_mesh;
 
     geometry_msgs::Pose m_last_pose;
-    geometry_msgs::Pose m_current_pose;
     Eigen::Vector3d     m_diff_position;
     Eigen::Quaterniond  m_diff_orientation;
-    sensor_msgs::PointCloud m_current_raytrace;
+
+    pose_sample m_current_pose;
 
     std::default_random_engine m_generator;
     std::normal_distribution<double> m_distribution;

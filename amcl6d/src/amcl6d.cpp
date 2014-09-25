@@ -9,7 +9,19 @@ void amcl6d::pose_sample::set_pose(geometry_msgs::Pose pose)
 geometry_msgs::Pose amcl6d::pose_sample::get_pose()
 {
     boost::shared_lock<boost::shared_mutex> lock(m_mutex);
-    return pose;
+    return this->pose;
+}
+
+void amcl6d::pose_sample::set_raytrace(sensor_msgs::PointCloud pcl)
+{
+    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
+    this->m_raytrace = pcl;
+}
+
+sensor_msgs::PointCloud amcl6d::pose_sample::get_raytrace()
+{
+    boost::shared_lock<boost::shared_mutex> lock(m_mutex);
+    return this->m_raytrace;
 }
 
 void amcl6d::pose_sample::set_probability(double probability)
@@ -21,7 +33,7 @@ void amcl6d::pose_sample::set_probability(double probability)
 double amcl6d::pose_sample::get_probability()
 {
     boost::shared_lock<boost::shared_mutex> lock(m_mutex);
-    return probability;
+    return this->probability;
 }
 
 void amcl6d::pose_sample::update_pose(double add_x, double add_y, double add_z, Eigen::Quaterniond set_orientation)
@@ -84,7 +96,7 @@ void amcl6d::publish()
 void amcl6d::update_poses()
 {
     // get current raytrace
-    m_current_raytrace = issue_raytrace(m_current_pose);
+    m_current_pose.set_raytrace(issue_raytrace(m_current_pose.get_pose()));
 
     // update samples
     #pragma omp parallel for
@@ -129,7 +141,8 @@ void amcl6d::update_poses()
         sensor_msgs::PointCloud pcl_result = issue_raytrace(m_pose_samples[i].get_pose());
         if(pcl_result.points.size() > 0)
         {
-            double probability = evaluate_raytrace(pcl_result);
+            m_pose_samples[i].set_raytrace(pcl_result);
+            double probability = evaluate_sample(m_pose_samples[i]);
 //            ROS_INFO("Value: %f", probability);
             m_pose_samples[i].set_probability(probability);
         }
@@ -155,22 +168,9 @@ sensor_msgs::PointCloud amcl6d::issue_raytrace(geometry_msgs::Pose pose)
     return pcl_result;
 }
 
-double amcl6d::evaluate_raytrace(sensor_msgs::PointCloud result)
+double amcl6d::evaluate_sample(pose_sample sample)
 {
-    double diff_squared = 0;
-    int num = std::min(m_current_raytrace.points.size(), result.points.size());
-    for(int i = 0; i < num; i++)
-    {
-        diff_squared += (m_current_raytrace.points[i].x - result.points[i].x)
-                      * (m_current_raytrace.points[i].x - result.points[i].x)
-                      + (m_current_raytrace.points[i].y - result.points[i].y)
-                      * (m_current_raytrace.points[i].y - result.points[i].y)
-                      + (m_current_raytrace.points[i].z - result.points[i].z)
-                      * (m_current_raytrace.points[i].z - result.points[i].z);
-    }
-   // ROS_INFO("diff_squared: %f, num: %d", diff_squared, num);
-    
-    return num? diff_squared / (double) num : 0;
+    return 0;
 }
 
 void amcl6d::generate_poses()
@@ -271,8 +271,8 @@ bool amcl6d::has_mesh()
 
 void amcl6d::move_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
 {
-    m_last_pose = geometry_msgs::Pose(m_current_pose);
-    m_current_pose = geometry_msgs::Pose((*pose_msg.get()).pose);
+    m_last_pose = geometry_msgs::Pose(m_current_pose.get_pose());
+    geometry_msgs::Pose current_pose = geometry_msgs::Pose((*pose_msg.get()).pose);
 
     // calculate difference between last and current pose
     Eigen::Vector3d    last_position(m_last_pose.position.x, 
@@ -282,15 +282,17 @@ void amcl6d::move_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
                                         m_last_pose.orientation.x, 
                                         m_last_pose.orientation.y, 
                                         m_last_pose.orientation.z);
-    Eigen::Vector3d    current_position(m_current_pose.position.x, 
-                                        m_current_pose.position.y, 
-                                        m_current_pose.position.z);
-    Eigen::Quaterniond current_orientation(m_current_pose.orientation.w, 
-                                           m_current_pose.orientation.x, 
-                                           m_current_pose.orientation.y, 
-                                           m_current_pose.orientation.z);
+    Eigen::Vector3d    current_position(current_pose.position.x, 
+                                        current_pose.position.y, 
+                                        current_pose.position.z);
+    Eigen::Quaterniond current_orientation(current_pose.orientation.w, 
+                                           current_pose.orientation.x, 
+                                           current_pose.orientation.y, 
+                                           current_pose.orientation.z);
     m_diff_position    = current_position - last_position;
     m_diff_orientation = last_orientation * current_orientation.inverse();
+
+    m_current_pose.set_pose(current_pose);
 
     // if there is a difference, provide an update
     double diff = m_diff_orientation.vec().squaredNorm() + m_diff_position.squaredNorm();
