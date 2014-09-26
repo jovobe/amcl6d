@@ -48,14 +48,42 @@ void amcl6d::pose_sample::update_pose(double add_x, double add_y, double add_z, 
     m_pose.orientation.w = set_orientation.w();
 }
 
-#include <iostream>
 void amcl6d::pose_sample::normalize_raytrace()
 {
     Eigen::Affine3d eigenPose(Eigen::Affine3d::Identity());
     tf::poseMsgToEigen(this->m_pose, eigenPose);
-//    std::cout << eigenPose << std::endl;
+    Eigen::Affine3d invertedPose = eigenPose.inverse();
+/*
+    std::cout << "Pose:" << std::endl;
+    std::cout << eigenPose(0, 0) << " " << eigenPose(0, 1) << " " << eigenPose(0, 2) << " " << eigenPose(0, 3) << std::endl
+              << eigenPose(1, 0) << " " << eigenPose(1, 1) << " " << eigenPose(1, 2) << " " << eigenPose(1, 3) << std::endl
+              << eigenPose(2, 0) << " " << eigenPose(2, 1) << " " << eigenPose(2, 2) << " " << eigenPose(2, 3) << std::endl
+              <<               0 << " " <<               0 << " " <<               0 << " " <<               1 << std::endl;
 
-
+    std::cout << "Inverted:" << std::endl;
+    std::cout << invertedPose(0, 0) << " " << invertedPose(0, 1) << " " << invertedPose(0, 2) << " " << invertedPose(0, 3) << std::endl
+              << invertedPose(1, 0) << " " << invertedPose(1, 1) << " " << invertedPose(1, 2) << " " << invertedPose(1, 3) << std::endl
+              << invertedPose(2, 0) << " " << invertedPose(2, 1) << " " << invertedPose(2, 2) << " " << invertedPose(2, 3) << std::endl
+              <<                  0 << " " <<                  0 << " " <<                  0 << " " <<                  1 << std::endl;
+*/
+    for(int i = 0; i < m_raytrace.points.size(); ++i)
+    {
+        double x = m_raytrace.points[i].x;
+        double y = m_raytrace.points[i].y;
+        double z = m_raytrace.points[i].z;
+        m_raytrace.points[i].x = invertedPose(0, 0) * x 
+                               + invertedPose(0, 1) * y 
+                               + invertedPose(0, 2) * z
+                               + invertedPose(0, 3);
+        m_raytrace.points[i].y = invertedPose(1, 0) * x
+                               + invertedPose(1, 1) * y
+                               + invertedPose(1, 2) * z
+                               + invertedPose(1, 3);
+        m_raytrace.points[i].z = invertedPose(2, 0) * x
+                               + invertedPose(2, 1) * y
+                               + invertedPose(2, 2) * z
+                               + invertedPose(2, 3);
+    }
 }
 
 amcl6d::pose_sample::pose_sample()
@@ -106,9 +134,10 @@ void amcl6d::publish()
 
 void amcl6d::update_poses()
 {
-    // get current raytrace
+    // get current raytrace // TODO get from robot
     m_current_pose.set_raytrace(issue_raytrace(m_current_pose.get_pose()));
     m_current_pose.normalize_raytrace();
+    prepare_kd_tree();
 
     // update samples
     #pragma omp parallel for
@@ -156,13 +185,13 @@ void amcl6d::update_poses()
             m_pose_samples[i].set_raytrace(pcl_result);
             m_pose_samples[i].normalize_raytrace();
             double probability = evaluate_sample(m_pose_samples[i]);
-//            ROS_INFO("Value: %f", probability);
+            ROS_INFO("Value: %f", probability);
             m_pose_samples[i].set_probability(probability);
         }
     }
     ROS_INFO("Raytraces done.");
     clock_t stop = clock();
-    ROS_INFO("Time elapsed: %f s", double(stop - start) / CLOCKS_PER_SEC);
+    ROS_INFO("CPU Time elapsed: %f s", double(stop - start) / CLOCKS_PER_SEC);
     
     // TODO particle regeneration
 }
@@ -183,7 +212,57 @@ sensor_msgs::PointCloud amcl6d::issue_raytrace(geometry_msgs::Pose pose)
 
 double amcl6d::evaluate_sample(pose_sample sample)
 {
-    return 0;
+    // TODO make K a configurable member or something
+    int k = 8;
+    double result = 0;
+
+    std::vector<float> dst(k);
+    dst.reserve(k);
+    std::vector<int> ind(k);
+    ind.reserve(k);
+    sensor_msgs::PointCloud pcl = sample.get_raytrace();
+    for(int i = 0; i < pcl.points.size(); ++i)
+    {
+        dst.erase(dst.begin(), dst.end());
+        ind.erase(ind.begin(), ind.end());
+        pcl::PointXYZ pt;
+        pt.x = pcl.points[i].x;
+        pt.y = pcl.points[i].y;
+        pt.z = pcl.points[i].z;
+        int neighbours = m_kd_tree.nearestKSearch(pt, k, ind, dst);
+        double avg = 0;
+        for(int j = 0; j < neighbours; ++j)
+        {
+            avg += dst[j]/neighbours;
+        }
+        result += avg;
+    }
+    result /= pcl.points.size();
+
+    return result;
+}
+
+void amcl6d::prepare_kd_tree()
+{
+    // this is needed since the rest uses the old and simple pointcloud
+    // could be changed by refactoring the whole node as well
+    // as the raytracer service
+
+    // set up different clouds
+    sensor_msgs::PointCloud points;
+    sensor_msgs::PointCloud2 points2;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr ptr(new pcl::PointCloud<pcl::PointXYZ>);
+
+    // fill first cloud with the data
+    points.points = m_current_pose.get_raytrace().points;
+
+    // convert through
+    sensor_msgs::convertPointCloudToPointCloud2(points, points2);
+    pcl::fromROSMsg(points2, *(ptr.get()));
+
+    // set up kd_tree
+    m_kd_tree = pcl::KdTreeFLANN<pcl::PointXYZ>(false);
+    m_kd_tree.setInputCloud(ptr);
 }
 
 void amcl6d::generate_poses()
@@ -198,7 +277,7 @@ void amcl6d::generate_poses()
 
     m_pose_samples.resize(m_sample_number);
     m_poses.poses.resize(m_sample_number);
-    #pragma mop parallel for
+    #pragma omp parallel for
     for(int i = 0; i < m_sample_number; ++i)
     {
         m_pose_samples[i].set_pose(m_factory->generate_random_pose());

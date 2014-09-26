@@ -12,15 +12,18 @@
 #include "amcl6d/pose_factory.h"
 #include "cgal_raytracer/raytracer_service.h"
 
-#include <eigen_conversions/eigen_msg.h>
-#include <vector>
-
 #include <boost/array.hpp>
 #include <boost/thread.hpp>
+
+#include <eigen_conversions/eigen_msg.h>
+#include <sensor_msgs/point_cloud_conversion.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/kdtree/kdtree_flann.h>
 
 #include <Eigen/Dense>
 #include <Eigen/Cholesky>
 
+#include <vector>
 #include <random>
 #include <atomic>
 #include <mutex>
@@ -114,6 +117,9 @@ private:
     ros::ServiceClient m_service_client;
 
     bool m_has_mesh; 
+
+    void prepare_kd_tree();
+    pcl::KdTreeFLANN<pcl::PointXYZ> m_kd_tree;
 };
 
 #endif

@@ -22,12 +22,13 @@ catkin_package(
 
 # common libraries
 find_package(Boost COMPONENTS system thread REQUIRED)
-find_package(Eigen)
-find_package(CGAL)
+find_package(Eigen REQUIRED)
+find_package(CGAL REQUIRED)
 find_package(OpenMP REQUIRED)
+find_package(PCL REQUIRED)
 
 # manually added libraries
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
+#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
 #find_package(Flann REQUIRED)
 
 if(OPENMP_FOUND)
@@ -40,8 +41,10 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
     #    ${Flann_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
 )
 
+# add c++11 support + set -frounding-math for CGAL
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -frounding-math")
 
 add_executable(amcl6d
@@ -56,6 +59,7 @@ target_link_libraries(amcl6d
     lvr_logger 
     ${Boost_LIBRARIES}
     CGAL
-    #   ${Flann_LIBRARIES}
+    #    ${Flann_LIBRARIES}
+    ${PCL_LIBRARIES}
 )
 
