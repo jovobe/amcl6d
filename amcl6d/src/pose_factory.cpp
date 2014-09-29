@@ -23,6 +23,9 @@ void pose_factory::set_bounds(amcl6d_tools::Mesh mesh)
         m_min_z = mesh.mesh.vertices[i].z < m_min_z? mesh.mesh.vertices[i].z : m_min_z;
         m_max_z = mesh.mesh.vertices[i].z > m_max_z? mesh.mesh.vertices[i].z : m_max_z;
     }
+    Logger::instance()->logX("ssdsds", "[Pose factory] Set boundaries:", "[",m_min_x,",",m_max_x,"]");
+    Logger::instance()->logX("ssdsds", "                              ", "[",m_min_y,",",m_max_y,"]");
+    Logger::instance()->logX("ssdsds", "                              ", "[",m_min_z,",",m_max_z,"]");
 }
 
 geometry_msgs::Pose pose_factory::generate_random_pose() 

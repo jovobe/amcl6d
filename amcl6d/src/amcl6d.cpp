@@ -100,14 +100,20 @@ amcl6d::pose_sample::pose_sample(const pose_sample& copy)
 
 amcl6d::amcl6d(ros::NodeHandle nodehandle)
 {
-    m_node_handle = nodehandle;
-    m_sample_number = 100;
-    m_pose_publisher = m_node_handle.advertise<geometry_msgs::PoseArray>("pose_samples", 1000);
+    Logger::instance()->log("[AMCL] Initializing...");
+    
+    m_node_handle           = nodehandle;
+    m_sample_number         = 100;
+    m_pose_publisher        = m_node_handle.advertise<geometry_msgs::PoseArray>("pose_samples", 1000);
     m_poses.header.frame_id = "world";
-    m_factory = new pose_factory();
-    m_distribution = std::normal_distribution<double>(0.0, 1.0);
+    m_factory               = new pose_factory();
+    m_distribution          = std::normal_distribution<double>(0.0, 1.0);
+    m_service_client        = m_node_handle.serviceClient<cgal_raytracer::RaytraceAtPose>("raytrace_at_pose");
 
-    m_service_client = m_node_handle.serviceClient<cgal_raytracer::RaytraceAtPose>("raytrace_at_pose");
+    Logger::instance()->log("[AMCL] Initialized:");
+    Logger::instance()->logX("si", "[AMCL]   Sample number:  ", m_sample_number);
+    Logger::instance()->logX("ss", "[AMCL]   Frame:          ", m_poses.header.frame_id.c_str());
+    Logger::instance()->logX("ss", "[AMCL]   PoseArray topic:", "pose_samples");
 }
 
 amcl6d::~amcl6d() {
@@ -120,6 +126,7 @@ amcl6d::~amcl6d() {
         delete m_factory;
         m_factory = NULL;
     }
+    Logger::instance()->log("[AMCL] Shut down.");
 }
 
 void amcl6d::clear()
@@ -267,9 +274,10 @@ void amcl6d::prepare_kd_tree()
 
 void amcl6d::generate_poses()
 {
+    Logger::instance()->log("[AMCL] Generating poses...");
     if(m_factory == NULL)
     {
-        ROS_INFO("amcl6d::generate_poses(): no factory.");
+        Logger::instance()->log("[AMCL] Can't generate poses: No factory.");
         return;
     }
 
@@ -286,6 +294,7 @@ void amcl6d::generate_poses()
     }
     init_mu();
     init_covariance();
+    Logger::instance()->logX("sis","[AMCL]", m_sample_number, "poses generated.");
 }
 
 Eigen::Vector6d amcl6d::sample()
@@ -327,15 +336,17 @@ void amcl6d::init_covariance()
                0, 0, 0, 0.01, 0, 0,
                0, 0, 0, 0, 0.01, 0,
                0, 0, 0, 0, 0, 0.01;
+    Logger::instance()->log("[AMCL] Covariance matrix set:");
+    Logger::instance()->log(m_covar.data(), 6, 6);
     update_cholesky_decomposition();
-    ROS_INFO("Updated covariances and cholesky decomposition.");
+    Logger::instance()->log("[AMCL] Cholesky decomposition calculated.");
 }
 
 // TODO get from robot
 void amcl6d::init_mu()
 {
     m_mu << 0, 0, 0, 0, 0, 0;
-    ROS_INFO("Updated mu's.");
+    Logger::instance()->log("[AMCL] mu set.");
 }
 
 void amcl6d::mesh_callback(const amcl6d_tools::Mesh::ConstPtr& message)
@@ -349,6 +360,8 @@ void amcl6d::mesh_callback(const amcl6d_tools::Mesh::ConstPtr& message)
 
 void amcl6d::set_mesh(amcl6d_tools::Mesh mesh)
 {
+    Logger::instance()->log("[AMCL] Received new mesh.");
+
     m_mesh = mesh;
     m_factory->set_bounds(m_mesh);
 
@@ -391,7 +404,7 @@ void amcl6d::move_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
 
     if(diff > 0)
     {
-        ROS_DEBUG("Moved.");
+        Logger::instance()->log("[AMCL] Move registered.");
         update_poses();
     }
 }

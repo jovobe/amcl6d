@@ -2,6 +2,9 @@
 #define POSEE_VISUALIZER_H
 
 #include "ros/ros.h"
+
+#include "amcl6d_tools/Logger.h"
+
 #include "geometry_msgs/Pose.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "visualization_msgs/Marker.h"

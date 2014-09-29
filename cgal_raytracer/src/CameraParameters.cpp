@@ -11,7 +11,7 @@
 
 CameraParameters::CameraParameters() 
 {
-    Logger::instance()->log("CameraParameters - constructor");
+    Logger::instance()->log("[Cam Params] Initializing.");
 
     m_minAngleH   = -45;
     m_maxAngleH   =  45;
@@ -31,7 +31,7 @@ CameraParameters::CameraParameters()
 CameraParameters::CameraParameters(const CameraParameters &camParams) 
 {
     boost::shared_lock<boost::shared_mutex> lock(m_mutex);
-    Logger::instance()->log("CameraParameters - copy constructor");
+    Logger::instance()->log("[Cam Params] Copying.");
 
     m_minAngleH   = camParams.m_minAngleH;
     m_maxAngleH   = camParams.m_maxAngleH;
@@ -49,7 +49,7 @@ CameraParameters::CameraParameters(const CameraParameters &camParams)
 }
 
 CameraParameters::~CameraParameters() {
-    Logger::instance()->log("~CameraParameters");
+    Logger::instance()->log("[Cam Params] Destroyed.");
 }
 
 void CameraParameters::reconfigure(cgal_raytracer::CamParamConfig &config, uint32_t level)
@@ -67,4 +67,5 @@ void CameraParameters::reconfigure(cgal_raytracer::CamParamConfig &config, uint3
     m_plane_minZ  = tan(m_minAngleV * M_PI / 180) * m_focalLength;
     m_plane_maxZ  = tan(m_maxAngleV * M_PI / 180) * m_focalLength;
     m_maxRange    = config.maxRange;
+    Logger::instance()->log("[Cam Params] Reconfigured.");
 }

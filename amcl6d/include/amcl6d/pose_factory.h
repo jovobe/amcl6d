@@ -5,7 +5,7 @@
 #include "geometry_msgs/Pose.h"
 #include "amcl6d_tools/Mesh.h"
 
-#include <limits>
+#include "amcl6d_tools/Logger.h"
 
 class pose_factory {
 

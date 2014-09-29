@@ -20,6 +20,8 @@
  */
 #include "ros/ros.h"
 
+#include "amcl6d_tools/Logger.h"
+
 #include "sensor_msgs/PointCloud.h"
 
 #include "amcl6d_tools/mesh_publisher.h"
@@ -30,6 +32,7 @@
 namespace mesh_publisher_service 
 {
     mesh_publisher* mp;
+    std::string service_name = "request_map";
 
     bool request_map(amcl6d_tools::RequestMap::Request&  req,
                      amcl6d_tools::RequestMap::Response& res)
@@ -48,6 +51,8 @@ namespace mesh_publisher_service
 
 int main(int argc, char** argv)
 {
+    Logger::instance()->log("[Mesh service] Initializing.");
+
     // initialize
     ros::init(argc, argv, "RequestMap");
     ros::NodeHandle nh;
@@ -63,14 +68,17 @@ int main(int argc, char** argv)
                                mesh_publisher_service::mp, _1, _2);
     reconf_srv.setCallback(reconf_cbfun);
     
-    ros::ServiceServer service = nh.advertiseService("request_map", mesh_publisher_service::request_map);
+    ros::ServiceServer service = nh.advertiseService(mesh_publisher_service::service_name, 
+                                                     mesh_publisher_service::request_map);
 
-    ROS_INFO("Map Request ready: request_map.");
+    Logger::instance()->logX("ss","[Mesh service] Initialized with service:", mesh_publisher_service::service_name.c_str());
     
     ros::spin();
 
     // clean up
     delete mesh_publisher_service::mp;
+
+    Logger::instance()->log("[Mesh service] Shut down.");
 
     return 0;
 }

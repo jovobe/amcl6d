@@ -15,23 +15,27 @@ CGALRaytracer::CGALRaytracer()
 {
     m_triangleList = TriangleList();
     m_tree = NULL;
+    Logger::instance()->log("[CGAL Raytracer] Initialized.");
 }
 
 CGALRaytracer::~CGALRaytracer()
 {
     // Free triangle list and Tree
-    Logger::instance()->log("~CGALRaytracer");
     if(m_tree != NULL)
     {
         delete m_tree;
         m_tree = NULL;
     }
+    Logger::instance()->log("[CGAL Raytracer] Shut down.");
 }
 
 void CGALRaytracer::setMap(amcl6d_tools::Mesh* map)
 {
+    Logger::instance()->log("[CGAL Raytracer] Received new map.");
+
     // lock this to avoid modification of map while raytracing
     boost::unique_lock<boost::shared_mutex> lock(m_mutex);
+    Logger::instance()->log("[CGAL Raytracer] Setting new map.");
 
     // clean up old stuff
     if(m_triangleList.size() > 0)
@@ -47,7 +51,7 @@ void CGALRaytracer::setMap(amcl6d_tools::Mesh* map)
 
     // Setup a list of triangles
     size_t triangle_count = map->mesh.faces.size();
-    Logger::instance()->logX("si", "CGALRaytracer::CGALRaytracer - Faces:", 
+    Logger::instance()->logX("si", "[CGAL Raytracer] Map faces:", 
                              triangle_count);
     K kernel;
 
@@ -85,12 +89,14 @@ void CGALRaytracer::setMap(amcl6d_tools::Mesh* map)
 
     if(degen_count > 0)
     {
-        Logger::instance()->logX("sis", "CGALRaytracer - Warning: found",
+        Logger::instance()->logX("sis", "[CGAL Raytracer] Found",
                                  degen_count, "degenerated (collinear) triangles.");
     }
     
     // Construct AABB tree
     m_tree = new Tree(m_triangleList.begin(), m_triangleList.end());
+
+    Logger::instance()->log("[CGAL Raytracer] Map set.");
 }
 
 void CGALRaytracer::simulatePointCloud( 
@@ -188,7 +194,7 @@ void CGALRaytracer::simulatePointCloud(
                 if(!CGAL::assign(currentIntersection, obj)) 
                 {
                     Logger::instance()->log(
-                        "CGALRaytracer: Point assignment failed.");
+                        "[CGAL Raytracer] Point assignment failed.");
                 } 
                 else 
                 {
@@ -209,7 +215,7 @@ void CGALRaytracer::simulatePointCloud(
         } 
         else 
         {
-//            Logger::instance()->log("CGALRaytracer - No intersections found.");
+            Logger::instance()->log("[CGAL Raytracer] No intersections found.");
         }
 
     }

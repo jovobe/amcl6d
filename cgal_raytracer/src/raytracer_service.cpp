@@ -11,7 +11,7 @@
 
 raytracer_service::raytracer_service() 
 {
-    Logger::instance()->setPrefix("RT SERVICE - ");
+    Logger::instance()->log("[Raytrace service] Initializing.");
     m_raytracer = new CGALRaytracer();
     m_frame = "rt_frame";
     m_mesh_received = false;
@@ -24,13 +24,14 @@ raytracer_service::~raytracer_service()
         delete m_raytracer;
         m_raytracer = NULL;
     }
+    Logger::instance()->log("[Raytrace service] Shut down.");
 }
 
 bool raytracer_service::raytrace(
         cgal_raytracer::RaytraceAtPose::Request  &request,
         cgal_raytracer::RaytraceAtPose::Response &response)
 {
-    Logger::instance()->log("Raytrace requested.");
+    Logger::instance()->log("[Raytrace service] Raytrace requested.");
 
     // empty double** pointer for the points, will be filled in the raytrace
     double** points;
@@ -51,7 +52,7 @@ bool raytracer_service::raytrace(
         response.raytrace.points[i].z = points[i][2];
     }
 
-    Logger::instance()->logX("sis", "Raytrace completed. Found", 
+    Logger::instance()->logX("sis", "[Raytrace service] Raytrace completed. Found", 
                              n_points, "points.");
     return true;
 }
@@ -65,7 +66,7 @@ void raytracer_service::mesh_callback(
        || message->mesh.vertices.size() != m_mesh.mesh.vertices.size() 
        || message->mesh.faces.size()    != m_mesh.mesh.faces.size())
     {
-        Logger::instance()->log("New Mesh received.");
+        Logger::instance()->log("[Raytrace service] New Mesh received.");
         // get mesh from the message
         set_mesh(amcl6d_tools::Mesh(*message.get()));
     }
@@ -80,13 +81,13 @@ void raytracer_service::set_mesh(amcl6d_tools::Mesh mesh)
         
     m_mesh_received = true;
 
-    Logger::instance()->log("Mesh loaded.");
+    Logger::instance()->log("[Raytrace service] Mesh loaded.");
 }
 
 void raytracer_service::reconfigure_callback(
         cgal_raytracer::CamParamConfig &config, uint32_t level)
 { 
-    Logger::instance()->log("Reconfiguring CameraParameters.");
+    Logger::instance()->log("[Raytrace service] Reconfiguring CameraParameters.");
     m_cam_params.reconfigure(config, level);
     
     boost::unique_lock<boost::shared_mutex> lock(m_mutex);
@@ -100,6 +101,8 @@ bool raytracer_service::has_mesh()
 
 int main(int argc, char** argv)
 {
+    Logger::instance()->log("[Raytrace service] Initializing.");
+
     // initialize
     ros::init(argc, argv, "raytracer_service");
     ros::NodeHandle nh;
@@ -107,13 +110,13 @@ int main(int argc, char** argv)
     // check params
     if(nh.hasParam("mesh_topic"))
     {
-        Logger::instance()->log("Custom mesh_topic given.");
+        Logger::instance()->log("[Raytrace service] Custom mesh_topic given.");
     }
 
     // load topic
     std::string topic;
     nh.param<std::string>("mesh_topic", topic, "map_mesh");
-    Logger::instance()->logX("ss", "Topic:", topic.c_str());
+    Logger::instance()->logX("ss", "[Raytrace service] Topic:", topic.c_str());
 
     // set up a raytracer_service instance
     raytracer_service* rt_service = new raytracer_service();
@@ -137,7 +140,7 @@ int main(int argc, char** argv)
                     &raytracer_service::mesh_callback, rt_service);
 
     // wait for a mesh
-    Logger::instance()->logX("sss", "Listening to", 
+    Logger::instance()->logX("sss", "[Raytrace service] Listening to", 
                              topic.c_str(), "to receive a mesh.");
     while(!rt_service->has_mesh() && ros::ok())
     {
@@ -151,10 +154,12 @@ int main(int argc, char** argv)
 
     if(ros::ok())
     {
+        Logger::instance()->log("[Raytrace service] Mesh received and loaded.");
+        
         // initialize service
         ros::ServiceServer service_server = nh.advertiseService("raytrace_at_pose", 
                                          &raytracer_service::raytrace, rt_service);
-        Logger::instance()->log("Raytracing service ready.");
+        Logger::instance()->log("[Raytrace service] Ready.");
     
         // asynchronous spinner for raytrace
         ros::AsyncSpinner async_spinner(8);

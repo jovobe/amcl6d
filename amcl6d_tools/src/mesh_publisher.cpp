@@ -10,11 +10,12 @@
 
 mesh_publisher::mesh_publisher()
 {
+    Logger::instance()->log("[Mesh publisher] Created.");
 }
 
 mesh_publisher::~mesh_publisher()
 {
-    Logger::instance()->log("~mesh_publisher()");
+    Logger::instance()->log("[Mesh publisher] Shut down.");
 }
 
 amcl6d_tools::Mesh mesh_publisher::get_message()
@@ -34,15 +35,15 @@ void mesh_publisher::reconfigure_callback(
         uint32_t level)
 {
     replace_frame(config.frame.compare("")? config.frame : "map_mesh");
-    Logger::instance()->logX("ss","Current frame:",m_frame.c_str());
-    Logger::instance()->logX("si","level:",(int)level);
+    Logger::instance()->log("[Mesh publisher] Reconfiguring.");
+    Logger::instance()->logX("ss","                   Frame:", m_frame.c_str());
     std::string home_dir(getenv("HOME"));
     std::string mesh_path = config.mesh_path;
     std::string mesh_name = config.mesh_name;
     std::string mesh = home_dir + mesh_path + mesh_name;
     if(mesh_name.compare("") || mesh.compare(""))
     {
-        Logger::instance()->logX("ss", "Trying to load mesh:", mesh.c_str());
+        Logger::instance()->logX("ss", "[Mesh publisher] Trying to load mesh:", mesh.c_str());
         if(mesh_exists(mesh))
         {
             replace_mesh(mesh);
@@ -58,7 +59,7 @@ void mesh_publisher::set_mesh(std::string mesh)
 void mesh_publisher::replace_mesh(std::string mesh)
 {
     boost::unique_lock<boost::shared_mutex> lock(m_mutex);
-    Logger::instance()->log("Setting mesh");
+    Logger::instance()->log("[Mesh publisher] Setting mesh.");
     m_model = lvr::ModelFactory::readModel(mesh);
     convert_model_to_messages();
 }
@@ -75,7 +76,7 @@ std::string mesh_publisher::get_frame()
 
 void mesh_publisher::convert_model_to_messages()
 {
-    Logger::instance()->log("Generating mesh message.");
+    Logger::instance()->log("[Mesh publisher] Generating mesh message.");
     
     // set message header ##############################
     m_mesh_message.header.frame_id = m_frame;
@@ -92,7 +93,7 @@ void mesh_publisher::convert_model_to_messages()
             m_model-> m_mesh-> getVertexArray(num_vertices));
     m_mesh_message.mesh.vertices.resize(num_vertices);
     m_mesh_pcl.points.resize(num_vertices);
-    Logger::instance()->logX("sis","Mesh has", num_vertices, "vertices");
+    Logger::instance()->logX("sis","[Mesh publisher] Mesh has", num_vertices, "vertices");
     
     for(int i = 0; i < num_vertices; ++i)
     {
@@ -109,7 +110,7 @@ void mesh_publisher::convert_model_to_messages()
     boost::shared_array<unsigned int> face_array(
             m_model-> m_mesh-> getFaceArray(num_faces));
     m_mesh_message.mesh.faces.resize(num_faces);
-    Logger::instance()->logX("sis","Mesh has", num_faces, "faces");
+    Logger::instance()->logX("sis","[Mesh publisher] Mesh has", num_faces, "faces");
     
     for(int i = 0; i < num_faces; ++i)
     {
@@ -135,11 +136,13 @@ bool mesh_publisher::mesh_exists(std::string mesh)
     if(ifs.good())
     {
         ifs.close(); 
+        Logger::instance()->log("[Mesh publisher] Mesh found.");
         return true;
     } 
     else 
     {
         ifs.close();
+        Logger::instance()->log("[Mesh publisher] Mesh not found.");
         return false;
     }
 }

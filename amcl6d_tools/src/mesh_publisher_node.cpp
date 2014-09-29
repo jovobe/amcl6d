@@ -20,6 +20,8 @@
  */
 #include "ros/ros.h"
 
+#include "amcl6d_tools/Logger.h"
+
 #include "sensor_msgs/PointCloud.h"
 
 #include "amcl6d_tools/mesh_publisher.h"
@@ -34,12 +36,12 @@ int main(int argc, char** argv)
     
     if(!nh.hasParam("mesh_topic"))
     {
-        ROS_INFO("Parameter 'mesh_topic' was not set, publishing to /mesh.");
+        Logger::instance()->log("[Mesh publisher node] Parameter 'mesh_topic' was not set, publishing to /mesh.");
     }
     // load topic
     std::string topic;
     nh.param<std::string>("mesh_topic", topic, "map_mesh");
-    Logger::instance()->logX("ss", "Topic:", topic.c_str());
+    Logger::instance()->logX("ss", "[Mesh publisher node] Publishing to topic:", topic.c_str());
 
     // initialize mesh publisher (loads model automatically)
     mesh_publisher* mp = new mesh_publisher();
@@ -71,6 +73,8 @@ int main(int argc, char** argv)
 
     // clean up
     delete mp;
+
+    Logger::instance()->log("[Mesh publisher node] Shut down.");
 
     return 0;
 }

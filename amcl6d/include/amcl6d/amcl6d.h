@@ -3,6 +3,8 @@
 
 #include "ros/ros.h"
 
+#include "amcl6d_tools/Logger.h"
+
 #include "geometry_msgs/Pose.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/PoseWithCovariance.h"

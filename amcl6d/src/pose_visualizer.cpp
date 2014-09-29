@@ -4,10 +4,12 @@ pose_visualizer::pose_visualizer(ros::NodeHandle* node_handle)
 {
     m_node = node_handle;
     m_publisher = m_node->advertise<visualization_msgs::MarkerArray>("pose_samples", 1000);
+    Logger::instance()->log("[Pose visualizer] Initialized.");
 }
 
 pose_visualizer::~pose_visualizer()
 {
+    Logger::instance()->log("[Pose visualizer] Shut down.");
 }
         
 void pose_visualizer::add_pose(int id, geometry_msgs::Pose pose)
@@ -92,6 +94,7 @@ void pose_visualizer::set_global_color(double r, double g, double b, double a)
         m_markers.markers[i].color.b = b;
         m_markers.markers[i].color.a = a;
     }
+    Logger::instance()->logX("sdddd", "[Pose visualizer] Color (rgba) changed:", r, g, b, a);
 }
 
 void pose_visualizer::set_color(int id, double r, double g, double b)
@@ -109,6 +112,7 @@ void pose_visualizer::set_color(int id, double r, double g, double b, double a)
 
 void pose_visualizer::remove_all()
 {
+    Logger::instance()->log("[Pose visualizer] Removing all markers.");
     for(int i = 0; i < m_markers.markers.size(); ++i)
     {
         m_markers.markers[i].action = visualization_msgs::Marker::DELETE;
@@ -124,6 +128,7 @@ void pose_visualizer::set_topic(std::string topic)
 {
     m_topic = topic;
     m_publisher = m_node->advertise<visualization_msgs::MarkerArray>(m_topic, 1000);
+    Logger::instance()->logX("ss","[Pose visualized] Set topic:", topic.c_str());
 }
 
 std::string pose_visualizer::get_topic() 

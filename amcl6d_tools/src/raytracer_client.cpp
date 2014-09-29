@@ -1,5 +1,7 @@
 #include "ros/ros.h"
 
+#include "amcl6d_tools/Logger.h"
+
 #include "cgal_raytracer/RaytraceAtPose.h"
 
 #include "geometry_msgs/PoseStamped.h"
@@ -95,19 +97,19 @@ namespace amcl6d_tools
         // raytrace toggle used
         if((level & RAYTRACE) != 0)
         {
-            ROS_INFO("raytrace issued");
+            Logger::instance()->log("[Raytrace client] Raytrace issued.");
             cgal_raytracer::RaytraceAtPose srv;
             srv.request.pose = current_pose.pose;
 
             if(service_client.call(srv))
             {
-                ROS_INFO("Raytrace successful.");
+                Logger::instance()->log("[Raytrace client] Raytrace successful.");
                 last_pose.pose = srv.request.pose;
                 last_result = srv.response.raytrace;
             }
             else
             {
-                ROS_INFO("Raytrace not succesfull.");
+                Logger::instance()->log("[Raytrace client] Raytrace not succesfull.");
             }
         }
     }
@@ -115,6 +117,8 @@ namespace amcl6d_tools
 
 int main(int argc, char** argv)
 {
+    Logger::instance()->log("[Raytrace client] Initializing.");
+
     ros::init(argc, argv, "raytracer_client");
     ros::NodeHandle nh;
 
@@ -139,6 +143,8 @@ int main(int argc, char** argv)
     amcl6d_tools::current_pose.header.frame_id = "poses";
     amcl6d_tools::last_pose.header.frame_id = "poses";
     
+    Logger::instance()->log("[Raytrace client] Initialized.");
+
     ros::Rate loop_rate(10);
     while(ros::ok())
     {
@@ -149,6 +155,8 @@ int main(int argc, char** argv)
         ros::spinOnce();
         loop_rate.sleep();
     }
+
+    Logger::instance()->log("[Raytrace client] Shut down.");
 
     return 0;
 }
