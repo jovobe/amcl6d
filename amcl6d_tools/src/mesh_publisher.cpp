@@ -34,6 +34,8 @@ void mesh_publisher::reconfigure_callback(
         amcl6d_tools::mesh_publisherConfig &config, 
         uint32_t level)
 {
+
+  ROS_INFO("%d level", level);
     replace_frame(config.frame.compare("")? config.frame : "map_mesh");
     Logger::instance()->log("[Mesh publisher] Reconfiguring.");
     Logger::instance()->logX("ss","                   Frame:", m_frame.c_str());

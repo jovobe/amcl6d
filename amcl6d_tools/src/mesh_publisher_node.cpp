@@ -61,14 +61,14 @@ int main(int argc, char** argv)
                                "mesh_point_cloud", 1000, true);
 
     // publish and broadcast  
-    ros::Rate loop_rate(15000); // 15 seconds
+    ros::Rate loop_rate(1.0/30.0); // 30 seconds
     while(ros::ok())
     {
         publisher.publish(mp->get_message());
         pcl_pub.publish(mp->get_pointcloud());
 
-        ros::spinOnce();
         loop_rate.sleep();
+        ros::spinOnce();
     }
 
     // clean up
