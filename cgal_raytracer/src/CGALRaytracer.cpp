@@ -215,7 +215,7 @@ void CGALRaytracer::simulatePointCloud(
         } 
         else 
         {
-            Logger::instance()->log("[CGAL Raytracer] No intersections found.");
+//            Logger::instance()->log("[CGAL Raytracer] No intersections found.");
         }
 
     }
