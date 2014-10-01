@@ -30,7 +30,6 @@
 #include <atomic>
 #include <mutex>
 #include <thread>
-#include <time.h>
 
 namespace Eigen {
     typedef Eigen::Matrix<double, 6, 1> Vector6d;
@@ -119,6 +118,7 @@ private:
     ros::ServiceClient m_service_client;
 
     bool m_has_mesh; 
+    bool m_moved;
 
     void prepare_kd_tree();
     pcl::KdTreeFLANN<pcl::PointXYZ> m_kd_tree;

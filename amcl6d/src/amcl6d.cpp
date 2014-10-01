@@ -106,6 +106,7 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle)
     m_sample_number         = 100;
     m_pose_publisher        = m_node_handle.advertise<geometry_msgs::PoseArray>("pose_samples", 1000);
     m_poses.header.frame_id = "world";
+    m_moved                 = false;
     m_factory               = new pose_factory();
     m_distribution          = std::normal_distribution<double>(0.0, 1.0);
     m_service_client        = m_node_handle.serviceClient<cgal_raytracer::RaytraceAtPose>("raytrace_at_pose");
@@ -180,9 +181,8 @@ void amcl6d::update_poses()
         m_poses.poses[i] = m_pose_samples[i].get_pose();
     }
 
-    // TODO change ROS_INFO to ROS_DEBUG
-    clock_t start = clock();
-    ROS_INFO("Starting raytraces.");
+    ros::Time now = ros::Time::now();
+    Logger::instance()->log("[AMCL] Starting raytraces.");
     #pragma omp parallel for
     for(int i = 0; i < m_pose_samples.size(); ++i)
     {
@@ -192,13 +192,12 @@ void amcl6d::update_poses()
             m_pose_samples[i].set_raytrace(pcl_result);
             m_pose_samples[i].normalize_raytrace();
             double probability = evaluate_sample(m_pose_samples[i]);
-            ROS_INFO("Value: %f", probability);
+            Logger::instance()->logX("sd","[AMCL] Value:", probability);
             m_pose_samples[i].set_probability(probability);
         }
     }
-    ROS_INFO("Raytraces done.");
-    clock_t stop = clock();
-    ROS_INFO("CPU Time elapsed: %f s", double(stop - start) / CLOCKS_PER_SEC);
+    Logger::instance()->log("[AMCL] Raytraces done.");
+    Logger::instance()->logX("sds", "[AMCL] Time elapsed:", ros::Duration(ros::Time::now() - now).toSec(), "s.");
     
     // TODO particle regeneration
 }
@@ -307,7 +306,7 @@ Eigen::Vector6d amcl6d::sample()
               m_distribution(m_generator),
               m_distribution(m_generator);
     
-    Eigen::Vector6d result = (values.transpose() * m_cholesky_decomp) + m_mu.transpose();
+    Eigen::Vector6d result = m_cholesky_decomp.transpose() * values + m_mu;
 
     /* 
     std::cout << "rand:" << std::endl << values << std::endl; 
@@ -325,6 +324,8 @@ Eigen::Vector6d amcl6d::sample()
 void amcl6d::update_cholesky_decomposition()
 {
     m_cholesky_decomp = m_covar.llt().matrixL();
+    Logger::instance()->log("Cholesky decomposition:");
+    Logger::instance()->log(m_cholesky_decomp.data(), 6, 6);
 }
 
 // TODO get from robot
@@ -402,10 +403,13 @@ void amcl6d::move_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
     // if there is a difference, provide an update
     double diff = m_diff_orientation.vec().squaredNorm() + m_diff_position.squaredNorm();
 
-    if(diff > 0)
+    if(diff > 0 && m_moved)
     {
         Logger::instance()->log("[AMCL] Move registered.");
         update_poses();
+        return;
     }
+
+    m_moved = true;
 }
 
