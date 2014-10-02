@@ -50,3 +50,13 @@ geometry_msgs::Pose pose_factory::generate_random_pose()
 
     return pose;
 }
+
+double pose_factory::get_maximum_distance() 
+{
+    double d_x = fabs(m_min_x - m_max_x);
+    double d_y = fabs(m_min_y - m_max_y);
+    double d_z = fabs(m_min_z - m_min_z);
+    return std::max(d_x, std::max(d_y, d_z));
+}
+
+    

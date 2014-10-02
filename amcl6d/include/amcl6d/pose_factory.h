@@ -17,6 +17,8 @@ public:
     
     geometry_msgs::Pose generate_random_pose();
 
+    double get_maximum_distance();
+
 private:
     double m_min_x;
     double m_max_x;
