@@ -12,6 +12,7 @@
 #include "geometry_msgs/PoseArray.h"
 #include "amcl6d_tools/Mesh.h"
 #include "amcl6d/pose_factory.h"
+#include "amcl6d/pose_sample.h"
 #include "cgal_raytracer/raytracer_service.h"
 
 #include <boost/array.hpp>
@@ -30,40 +31,17 @@
 #include <atomic>
 #include <mutex>
 #include <thread>
+#include <algorithm>
 
-namespace Eigen {
+namespace Eigen 
+{
     typedef Eigen::Matrix<double, 6, 1> Vector6d;
     typedef Eigen::Matrix<double, 6, 6> Matrix6d;
 }
 
-class amcl6d {
+class amcl6d 
+{
 public:
-
-    struct pose_sample {
-        public:
-            void set_pose(geometry_msgs::Pose pose);
-            geometry_msgs::Pose get_pose();
-            void update_pose(double add_x, double add_y, double add_z, Eigen::Quaterniond set_orientation);
-
-            void set_probability(double probability);
-            double get_probability();
-
-            void set_raytrace(sensor_msgs::PointCloud pcl);
-            sensor_msgs::PointCloud get_raytrace();
-            
-            void normalize_raytrace();
-
-            pose_sample();
-            pose_sample(const pose_sample& copy);
-        private: 
-            geometry_msgs::Pose m_pose;
-            double m_probability;
-            sensor_msgs::PointCloud m_raytrace;
-
-            // some lock to lock/unlock this sample
-            boost::shared_mutex m_mutex;
-    };
-
     amcl6d(ros::NodeHandle nodehandle);
     ~amcl6d();
 
@@ -122,6 +100,11 @@ private:
 
     void prepare_kd_tree();
     pcl::KdTreeFLANN<pcl::PointXYZ> m_kd_tree;
+
+    double m_discard_percentage;
+    double m_close_respawn_percentage;
+    double m_top_percentage;
+    double m_random_respawn_percentage; 
 };
 
 #endif

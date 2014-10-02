@@ -50,6 +50,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -frounding-math")
 add_executable(amcl6d
     src/amcl6d_node.cpp
     src/pose_factory.cpp
+    src/pose_sample.cpp
     src/pose_visualizer.cpp
     src/amcl6d.cpp
 )
