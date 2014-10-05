@@ -1,5 +1,4 @@
 <?xml version="1.0"?>
 <launch>
-    <!--    <node name="particle_factory" pkg="amcl6d" type="amcl6d" output="screen" launch-prefix="valgrind" />-->
     <node name="particle_factory" pkg="amcl6d" type="amcl6d" output="screen" />
 </launch>
