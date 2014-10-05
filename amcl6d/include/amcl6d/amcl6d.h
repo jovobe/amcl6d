@@ -2,6 +2,7 @@
 #define AMCL6D_H
 
 #include "ros/ros.h"
+#include "ros/callback_queue.h"
 
 #include "amcl6d_tools/Logger.h"
 
@@ -56,6 +57,8 @@ public:
     void clear();
 
     bool has_mesh();
+
+    geometry_msgs::PoseStamped get_best();
     
 private:
     void update_poses();
@@ -79,6 +82,7 @@ private:
     std::vector<pose_sample> m_pose_samples;
 
     ros::Publisher m_pose_publisher;
+    ros::Publisher m_best_pose_publisher;
 
     amcl6d_tools::Mesh m_mesh;
 
@@ -97,6 +101,7 @@ private:
 
     bool m_has_mesh; 
     bool m_moved;
+    bool m_has_guess;
 
     void prepare_kd_tree();
     pcl::KdTreeFLANN<pcl::PointXYZ> m_kd_tree;
@@ -105,6 +110,8 @@ private:
     double m_close_respawn_percentage;
     double m_top_percentage;
     double m_random_respawn_percentage; 
+   
+    geometry_msgs::PoseStamped m_current_best_pose;
 };
 
 #endif

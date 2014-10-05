@@ -20,6 +20,8 @@ public:
 
     void set_probability(double probability);
     double get_probability();
+    void set_likelihood(double likelihood);
+    double get_likelihood();
     void set_raytrace(sensor_msgs::PointCloud pcl);
     sensor_msgs::PointCloud get_raytrace();
         
@@ -32,6 +34,7 @@ private:
     sensor_msgs::PointCloud m_raytrace;
 
     double m_probability;
+    double m_likelihood;
     // some lock to lock/unlock this sample
 //    boost::shared_mutex m_mutex;
 };

@@ -7,8 +7,10 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle)
     m_node_handle           = nodehandle;
     m_sample_number         = 100;
     m_pose_publisher        = m_node_handle.advertise<geometry_msgs::PoseArray>("pose_samples", 1000);
-    m_poses.header.frame_id = "world";
+    m_best_pose_publisher   = m_node_handle.advertise<geometry_msgs::PoseStamped>("pose_hypothesis", 1000);
+    m_poses.header.frame_id = m_current_best_pose.header.frame_id = "world";
     m_moved                 = false;
+    m_has_guess             = false;
     m_factory               = new pose_factory();
     m_distribution          = std::normal_distribution<double>(0.0, 1.0);
     m_service_client        = m_node_handle.serviceClient<cgal_raytracer::RaytraceAtPose>("raytrace_at_pose");
@@ -45,8 +47,12 @@ void amcl6d::clear()
 void amcl6d::publish()
 {
     m_pose_publisher.publish(m_poses);
+    if(m_has_guess)
+    {
+        m_best_pose_publisher.publish(m_current_best_pose);
+    }
 }
-
+#include <iostream>
 void amcl6d::update_poses()
 {
     // get current raytrace // TODO get from robot
@@ -58,9 +64,6 @@ void amcl6d::update_poses()
     #pragma omp parallel for
     for(int i = 0; i < m_pose_samples.size(); ++i)
     {
-        // TODO this might be wrong
-        m_pose_samples[i].set_probability(m_pose_samples[i].get_probability() / (double)m_sample_number);
-
         // sample noise according to covariances and update poses
         Eigen::Vector6d noise = sample();
         
@@ -88,6 +91,7 @@ void amcl6d::update_poses()
         m_poses.poses[i] = m_pose_samples[i].get_pose();
     }
 
+    // evaluate raytraces (i.e. get new likelihood)
     ros::Time now = ros::Time::now();
     Logger::instance()->log("[AMCL] Starting raytraces.");
     #pragma omp parallel for
@@ -98,33 +102,69 @@ void amcl6d::update_poses()
         {
             m_pose_samples[i].set_raytrace(pcl_result);
             m_pose_samples[i].normalize_raytrace();
-            double probability = evaluate_sample(m_pose_samples[i]);
-            Logger::instance()->logX("sd","[AMCL] Value:", probability);
-            m_pose_samples[i].set_probability(probability);
+            double likelihood = evaluate_sample(m_pose_samples[i]);
+            m_pose_samples[i].set_likelihood(likelihood);
         }
     }
-    Logger::instance()->log("[AMCL] Raytraces done.");
-    Logger::instance()->logX("sds", "[AMCL] Time elapsed:", ros::Duration(ros::Time::now() - now).toSec(), "s.");
+    Logger::instance()->logX("sds", "[AMCL] Raytraces done. Time elapsed:", ros::Duration(ros::Time::now() - now).toSec(), "s.");
     
-    // TODO particle regeneration
-    // sort particles by probability from evaluation
-//    std::sort(m_pose_samples.begin(), m_pose_samples.end(), pcomp);
-//    I give up. It's definitely not about namespaces...
-    std::sort(m_pose_samples.begin(), m_pose_samples.end(), [](pose_sample left, pose_sample right){ return left.get_probability() < right.get_probability(); });
-    /*for(int i = 0; i < m_pose_samples.size()-1; ++i)
-    {
-        if(m_pose_samples[i].get_probability() < m_pose_samples[i+1].get_probability())
-        {
-            pose_sample tmp = m_pose_samples[i+1];
-            m_pose_samples[i+1] = m_pose_samples[i];
-            m_pose_samples[i] = tmp;
-            i = 0;
-        }
-    }*/
+    std::cout << "Likelihoods: " << std::endl;
     for(int i = 0; i < m_pose_samples.size(); ++i)
     {
-        Logger::instance()->logX("sd", "[AMCL] [SORTED] value:", m_pose_samples[i].get_probability());
-    } 
+       std::cout << m_pose_samples[i].get_likelihood() << ", ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "Prior: " << std::endl;
+    for(int i = 0; i < m_pose_samples.size(); ++i)
+    {
+       std::cout << m_pose_samples[i].get_probability() << ", ";
+    }
+    std::cout << std::endl;
+
+    // find normalization factor (marginalize over likelihoods)
+    double norm = 0;
+    #pragma omp parallel for
+    for(int i = 0; i < m_pose_samples.size(); ++i)
+    {
+        norm += m_pose_samples[i].get_likelihood();
+    }
+
+    std::cout << "Norm: " << 1/norm << std::endl;
+
+    // calculate new probablities: likelihood * prior / normalization
+    #pragma omp parallel for
+    for(int i = 0; i < m_pose_samples.size(); ++i)
+    {
+        m_pose_samples[i].set_probability(m_pose_samples[i].get_likelihood() * m_pose_samples[i].get_probability() / norm);
+    }
+    
+    std::cout << "Posterior: " << std::endl;
+    for(int i = 0; i < m_pose_samples.size(); ++i)
+    {
+       std::cout << m_pose_samples[i].get_likelihood() << ", ";
+    }
+    std::cout << std::endl;
+
+    
+    // TODO particle regeneration
+    // sort particles by posterior probability
+    std::sort(m_pose_samples.begin(), m_pose_samples.end(), [](pose_sample left, pose_sample right){ return left.get_probability() > right.get_probability(); });
+    
+    std::cout << "Posterior sorted: " << std::endl;
+    for(int i = 0; i < m_pose_samples.size(); ++i)
+    {
+       std::cout << m_pose_samples[i].get_probability() << ", ";
+    }
+    std::cout << std::endl;
+
+    m_current_best_pose.pose = m_pose_samples[0].get_pose();
+
+
+    // RESPAWN
+
+    m_has_guess = true;
+    m_moved = true;
 }
 
 sensor_msgs::PointCloud amcl6d::issue_raytrace(geometry_msgs::Pose pose)
@@ -301,6 +341,8 @@ void amcl6d::set_mesh(amcl6d_tools::Mesh mesh)
     m_factory->set_bounds(m_mesh);
 
     m_has_mesh = true;
+    m_has_guess = false;
+    m_moved = false;
     generate_poses();
 }
 
@@ -347,3 +389,7 @@ void amcl6d::move_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
     m_moved = true;
 }
 
+geometry_msgs::PoseStamped amcl6d::get_best()
+{
+    return m_current_best_pose;
+}

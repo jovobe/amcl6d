@@ -36,6 +36,16 @@ double pose_sample::get_probability()
     return this->m_probability;
 }
 
+void pose_sample::set_likelihood(double likelihood)
+{
+    this->m_likelihood = likelihood;
+}
+
+double pose_sample::get_likelihood()
+{
+    return this->m_likelihood;
+}
+
 void pose_sample::update_pose(double add_x, double add_y, double add_z, Eigen::Quaterniond set_orientation)
 {
 //    boost::unique_lock<boost::shared_mutex> lock(m_mutex);
@@ -85,7 +95,7 @@ void pose_sample::normalize_raytrace()
                                + invertedPose(2, 3);
     }
 }
-/*
+/* // this should be added in case we need boost again - also = has to be implemented then
 pose_sample::pose_sample()
 {
 
