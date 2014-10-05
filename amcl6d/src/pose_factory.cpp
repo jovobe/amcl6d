@@ -2,12 +2,14 @@
 
 pose_factory::pose_factory()
 {
+    Logger::instance()->log("[Pose factory] Initialized.");
     m_min_x = m_min_y = m_min_z = -1;
     m_max_x = m_max_y = m_max_z = 1;
 }
     
 pose_factory::~pose_factory()
 {
+    Logger::instance()->log("[Pose factory] Shut down.");
 }
 
 void pose_factory::set_bounds(amcl6d_tools::Mesh mesh)
