@@ -43,7 +43,7 @@ namespace Eigen
 class amcl6d 
 {
 public:
-    amcl6d(ros::NodeHandle nodehandle);
+    amcl6d(ros::NodeHandle nodehandle, ros::CallbackQueue* queue);
     ~amcl6d();
 
     void generate_poses();
@@ -53,6 +53,7 @@ public:
     void set_mesh(amcl6d_tools::Mesh mesh);
 
     void publish(); 
+    void spinOnce();
 
     void clear();
 
@@ -96,6 +97,8 @@ private:
     std::normal_distribution<double> m_distribution;
 
     ros::NodeHandle m_node_handle;
+    ros::CallbackQueue* m_queue;
+    bool m_busy;
 
     ros::ServiceClient m_service_client;
 
@@ -103,7 +106,7 @@ private:
     bool m_moved;
     bool m_has_guess;
 
-    void prepare_kd_tree();
+    bool prepare_kd_tree();
     pcl::KdTreeFLANN<pcl::PointXYZ> m_kd_tree;
 
     double m_discard_percentage;

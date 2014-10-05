@@ -1,10 +1,11 @@
 #include "amcl6d/amcl6d.h"
 
-amcl6d::amcl6d(ros::NodeHandle nodehandle)
+amcl6d::amcl6d(ros::NodeHandle nodehandle, ros::CallbackQueue* queue)
 {
     Logger::instance()->log("[AMCL] Initializing...");
     
     m_node_handle           = nodehandle;
+    m_queue                 = queue;
     m_sample_number         = 100;
     m_pose_publisher        = m_node_handle.advertise<geometry_msgs::PoseArray>("pose_samples", 1000);
     m_best_pose_publisher   = m_node_handle.advertise<geometry_msgs::PoseStamped>("pose_hypothesis", 1000);
@@ -52,13 +53,23 @@ void amcl6d::publish()
         m_best_pose_publisher.publish(m_current_best_pose);
     }
 }
+
+void amcl6d::spinOnce()
+{
+    // TODO: block this while updating
+    m_queue->callOne();
+}
+
 #include <iostream>
 void amcl6d::update_poses()
 {
     // get current raytrace // TODO get from robot
     m_current_pose.set_raytrace(issue_raytrace(m_current_pose.get_pose()));
     m_current_pose.normalize_raytrace();
-    prepare_kd_tree();
+    if(!prepare_kd_tree())
+    {
+        return;
+    }
 
     // update samples
     #pragma omp parallel for
@@ -222,7 +233,7 @@ double amcl6d::evaluate_sample(pose_sample sample)
     return n_result;
 }
 
-void amcl6d::prepare_kd_tree()
+bool amcl6d::prepare_kd_tree()
 {
     // this is needed since the rest uses the old and simple pointcloud
     // could be changed by refactoring the whole node as well
@@ -235,6 +246,11 @@ void amcl6d::prepare_kd_tree()
 
     // fill first cloud with the data
     points.points = m_current_pose.get_raytrace().points;
+    if(points.points.size() == 0) 
+    {
+        Logger::instance()->log("[AMCL] No sensor input available. Move along. (Aborting.)");
+        return false;
+    }
 
     // convert through
     sensor_msgs::convertPointCloudToPointCloud2(points, points2);
@@ -243,6 +259,8 @@ void amcl6d::prepare_kd_tree()
     // set up kd_tree
     m_kd_tree = pcl::KdTreeFLANN<pcl::PointXYZ>(false);
     m_kd_tree.setInputCloud(ptr);
+
+    return true;
 }
 
 void amcl6d::generate_poses()

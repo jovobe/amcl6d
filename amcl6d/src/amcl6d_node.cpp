@@ -30,12 +30,8 @@ int main(int argc, char** args)
     ros::NodeHandle nodehandle;
     signal(SIGINT, amcl6d_node::shutdown_callback);
   
-/*    ros::NodeHandle move_nodehandle;
     ros::CallbackQueue move_queue;
-    move_nodehandle.setCallbackQueue(&move_queue);
-    amcl6d_node::amcl = new amcl6d(move_nodehandle);
-    */
-    amcl6d_node::amcl = new amcl6d(nodehandle);
+    amcl6d_node::amcl = new amcl6d(nodehandle, &move_queue);
   
 
     // subscribe to mesh
@@ -57,7 +53,7 @@ int main(int argc, char** args)
     Logger::instance()->log(ros::ok()? "[AMCL Node] Map received." : "[AMCL Node] Interrupted while waiting for map.");
     
     // variant for local queue (not working)
-    /*
+    
     ros::VoidConstPtr  move_vcp(amcl6d_node::amcl);
     std::string        move_topic("man_cur_pose");
     uint32_t           queue_length = 0;
@@ -66,19 +62,20 @@ int main(int argc, char** args)
     ros::SubscribeOptions move_options = ros::SubscribeOptions::create(move_topic, queue_length, 
                                                                        move_func, move_vcp, &move_queue);
     ros::Subscriber move_subscriber = nodehandle.subscribe(move_options);
-    */
+    
     // variant for global queue (clears queue from time to time... needs fix)
-    ros::Subscriber move_subscriber = nodehandle.subscribe("man_cur_pose", 1000, &amcl6d::move_callback, amcl6d_node::amcl);
+    //ros::Subscriber move_subscriber = nodehandle.subscribe("man_cur_pose", 1000, &amcl6d::move_callback, amcl6d_node::amcl);
     
     Logger::instance()->log("[AMCL Node] Ready.");
 
     ros::Rate loop(100);
     while(ros::ok())
     {   
-//        amcl6d_node::amcl();
         amcl6d_node::amcl->publish();
 
         ros::spinOnce();
+        amcl6d_node::amcl->spinOnce();
+
         loop.sleep();
     }
 
