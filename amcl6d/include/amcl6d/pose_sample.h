@@ -26,6 +26,8 @@ public:
     sensor_msgs::PointCloud get_raytrace();
         
     void normalize_raytrace();
+
+    bool is_close(geometry_msgs::Pose pose);
   //  pose_sample();
   //  pose_sample(const pose_sample& copy);
 

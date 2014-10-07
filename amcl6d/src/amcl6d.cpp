@@ -18,8 +18,10 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle, ros::CallbackQueue* queue)
 
     m_discard_percentage        = 0.4;
     m_close_respawn_percentage  = 0.25;
-    m_top_percentage            = 0.1;
-    m_random_respawn_percentage = m_discard_percentage - m_close_respawn_percentage; 
+    m_top_percentage            = 0.02;
+    m_low_threshold             = 0.0005;
+
+    m_iterations = 0;
 
     Logger::instance()->log("[AMCL] Initialized:");
     Logger::instance()->logX("si", "[AMCL]   Sample number:  ", m_sample_number);
@@ -138,10 +140,10 @@ void amcl6d::update_poses()
     #pragma omp parallel for
     for(int i = 0; i < m_pose_samples.size(); ++i)
     {
-        norm += m_pose_samples[i].get_likelihood();
+        norm += m_pose_samples[i].get_likelihood() * m_pose_samples[i].get_probability();
     }
 
-    std::cout << "Norm: " << 1/norm << std::endl;
+    std::cout << "Norm: " << norm << std::endl;
 
     // calculate new probablities: likelihood * prior / normalization
     #pragma omp parallel for
@@ -153,7 +155,7 @@ void amcl6d::update_poses()
     std::cout << "Posterior: " << std::endl;
     for(int i = 0; i < m_pose_samples.size(); ++i)
     {
-       std::cout << m_pose_samples[i].get_likelihood() << ", ";
+       std::cout << m_pose_samples[i].get_probability() << ", ";
     }
     std::cout << std::endl;
 
@@ -162,17 +164,68 @@ void amcl6d::update_poses()
     // sort particles by posterior probability
     std::sort(m_pose_samples.begin(), m_pose_samples.end(), [](pose_sample left, pose_sample right){ return left.get_probability() > right.get_probability(); });
     
+    double sum = 0;
     std::cout << "Posterior sorted: " << std::endl;
     for(int i = 0; i < m_pose_samples.size(); ++i)
     {
+        sum += m_pose_samples[i].get_probability();
        std::cout << m_pose_samples[i].get_probability() << ", ";
     }
     std::cout << std::endl;
+
+    std::cout << "Posterior sum: " << sum << std::endl;
 
     m_current_best_pose.pose = m_pose_samples[0].get_pose();
 
 
     // RESPAWN
+    int top_values_last = m_pose_samples.size() * m_top_percentage;
+
+    int a = 0;
+    int b = 0;
+    int c = 0;
+    for(int i = 0; i < m_pose_samples.size(); i++)
+    {
+        // respawn close to current best
+        if(i < m_pose_samples.size() * m_close_respawn_percentage)
+        {
+            // generate sample and check if it's close to a top value
+            bool close = false;
+            do 
+            {
+                geometry_msgs::Pose n_pose = m_factory->generate_random_pose();
+                for(int j = 0; j <= top_values_last; j++)
+                {
+                    if(m_pose_samples[j].is_close(n_pose))
+                    {
+                        m_pose_samples[i].set_pose(n_pose);
+                        m_pose_samples[i].set_probability(1.0 / m_sample_number);
+                        m_poses.poses[i] = m_pose_samples[i].get_pose();
+                        close = true;
+                        a++;
+                        break;
+                    }
+                }
+            }
+            while(!close);
+        }
+        // respawn random samples and improbable poses
+        else if(i < m_pose_samples.size() * m_discard_percentage || m_pose_samples[i].get_probability() < m_low_threshold)
+        {
+            b++;
+            m_pose_samples[i].set_pose(m_factory->generate_random_pose());
+            m_pose_samples[i].set_probability(1.0 / m_sample_number);
+            m_poses.poses[i] = m_pose_samples[i].get_pose();
+        }
+        else
+        {
+            c++;
+        }
+    }
+    std::cout << "Stats: kept: " << c << " close respawn: " << a << " random respawn: " << b << std::endl;
+
+    m_iterations++;
+    std::cout << "Iterations: " << m_iterations << std::endl;
 
     m_has_guess = true;
     m_moved = true;

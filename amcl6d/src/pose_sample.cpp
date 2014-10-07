@@ -95,6 +95,30 @@ void pose_sample::normalize_raytrace()
                                + invertedPose(2, 3);
     }
 }
+
+bool pose_sample::is_close(geometry_msgs::Pose pose)
+{
+    double radius_threshold = 0.1;
+    double angle_threshold = 5 * M_PI / 180;
+    // check if the position is in a sphere around this pose
+    double x = pose.position.x - m_pose.position.x;
+    double y = pose.position.y - m_pose.position.y;
+    double z = pose.position.z - m_pose.position.z;
+    double r = radius_threshold;
+
+    if(x*x*x+y*y*y+z*z*z <= r*r*r)
+    {
+        // TODO check for orientation
+        Eigen::Quaterniond o1(m_pose.orientation.x, m_pose.orientation.y, m_pose.orientation.z, m_pose.orientation.w);
+        Eigen::Quaterniond o2(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+        Eigen::AngleAxisd angle_axis(o1 * o2.inverse());
+        if(angle_axis.angle() < angle_threshold)
+        {
+            return true;
+        }
+    }
+    return false;
+}
 /* // this should be added in case we need boost again - also = has to be implemented then
 pose_sample::pose_sample()
 {

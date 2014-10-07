@@ -112,8 +112,9 @@ private:
     double m_discard_percentage;
     double m_close_respawn_percentage;
     double m_top_percentage;
-    double m_random_respawn_percentage; 
-   
+    double m_low_threshold; 
+    int m_iterations;
+
     geometry_msgs::PoseStamped m_current_best_pose;
 };
 
