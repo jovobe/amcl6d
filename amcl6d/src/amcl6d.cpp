@@ -16,6 +16,7 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle, ros::CallbackQueue* queue)
     m_distribution          = std::normal_distribution<double>(0.0, 1.0);
     m_service_client        = m_node_handle.serviceClient<cgal_raytracer::RaytraceAtPose>("raytrace_at_pose");
 
+    // TODO tweak params
     m_discard_percentage        = 0.4;
     m_close_respawn_percentage  = 0.25;
     m_top_percentage            = 0.02;
@@ -191,7 +192,7 @@ void amcl6d::update_poses()
         {
             // generate sample and check if it's close to a top value
             bool close = false;
-            do 
+            do // TODO maybe change to a more clever method than rejection sampling
             {
                 geometry_msgs::Pose n_pose = m_factory->generate_random_pose();
                 for(int j = 0; j <= top_values_last; j++)
