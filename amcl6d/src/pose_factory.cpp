@@ -5,6 +5,17 @@ pose_factory::pose_factory()
     Logger::instance()->log("[Pose factory] Initialized.");
     m_min_x = m_min_y = m_min_z = -1;
     m_max_x = m_max_y = m_max_z = 1;
+
+
+    double a = 5 * M_PI / 180;
+    Eigen::Matrix6d covar;
+    covar << 1, 0, 0, 0, 0, 0,
+             0, 1, 0, 0, 0, 0,
+             0, 0, 1, 0, 0, 0,
+             0, 0, 0, a, 0, 0,
+             0, 0, 0, 0, a, 0,
+             0, 0, 0, 0, 0, a;
+    m_cholesky_decomp = covar.llt().matrixL();
 }
     
 pose_factory::~pose_factory()
@@ -51,6 +62,39 @@ geometry_msgs::Pose pose_factory::generate_random_pose()
     pose.orientation.w = s_2 * cos(p_2);
 
     return pose;
+}
+
+geometry_msgs::Pose pose_factory::generate_pose_near(geometry_msgs::Pose pose)
+{
+    Eigen::Vector6d values;
+    values << m_distribution(m_generator), 
+              m_distribution(m_generator),
+              m_distribution(m_generator),
+              m_distribution(m_generator),
+              m_distribution(m_generator),
+              m_distribution(m_generator);
+    Eigen::Vector6d noise = m_cholesky_decomp.transpose() * values;
+
+    geometry_msgs::Pose sample_pose = pose;
+    Eigen::Quaterniond orientation(sample_pose.orientation.w,
+                                   sample_pose.orientation.x,
+                                   sample_pose.orientation.y,
+                                   sample_pose.orientation.z);
+    
+    Eigen::Quaterniond rotZ(Eigen::AngleAxisd(noise(3), Eigen::Vector3d::UnitZ()));
+    Eigen::Quaterniond rotY(Eigen::AngleAxisd(noise(4), Eigen::Vector3d::UnitY()));
+    Eigen::Quaterniond rotX(Eigen::AngleAxisd(noise(5), Eigen::Vector3d::UnitX()));
+    orientation = rotX * rotY * rotZ * orientation;
+        
+    sample_pose.position.x += noise(0);
+    sample_pose.position.y += noise(1);
+    sample_pose.position.z += noise(2);
+    sample_pose.orientation.x = orientation.x();
+    sample_pose.orientation.y = orientation.y();
+    sample_pose.orientation.z = orientation.z();
+    sample_pose.orientation.w = orientation.w();
+
+    return sample_pose;
 }
 
 double pose_factory::get_maximum_distance() 
