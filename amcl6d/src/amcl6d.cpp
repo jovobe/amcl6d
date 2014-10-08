@@ -19,7 +19,7 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle, ros::CallbackQueue* queue)
     // TODO tweak params
     m_discard_percentage        = 0.4;
     m_close_respawn_percentage  = 0.25;
-    m_top_percentage            = 0.02;
+    m_top_percentage            = 0.1;
     m_low_threshold             = 0.0005;
 
     m_iterations = 0;
@@ -116,7 +116,7 @@ void amcl6d::update_poses()
         {
             m_pose_samples[i].set_raytrace(pcl_result);
             m_pose_samples[i].normalize_raytrace();
-            double likelihood = evaluate_sample(m_pose_samples[i]);
+            double likelihood = 1 / evaluate_sample(m_pose_samples[i]);
             m_pose_samples[i].set_likelihood(likelihood);
         }
     }
@@ -153,30 +153,37 @@ void amcl6d::update_poses()
     for(int i = 0; i < m_pose_samples.size(); ++i)
     {
         sum += m_pose_samples[i].get_probability();
+        //std::cout << m_pose_samples[i].get_probability() << ", " << std::endl;
     }
 
     std::cout << "Posterior sum: " << sum << std::endl;
 
     m_current_best_pose.pose = m_pose_samples[0].get_pose();
 
-
     // RESPAWN
     int top_values_last = m_pose_samples.size() * m_top_percentage;
 
-    for(int i = 0; i < m_pose_samples.size(); i++)
+    std::cout << std::endl << "Stats:" << std::endl
+                           << "  Keeping 0 to " << m_pose_samples.size() * m_top_percentage << std::endl
+                           << "  Respawning close from " << m_pose_samples.size() * (1-m_close_respawn_percentage) << std::endl
+                           << "  Respawning random from " << m_pose_samples.size() * (1-m_discard_percentage) << std::endl;
+
+    for(int i = m_pose_samples.size()-1; i > m_pose_samples.size() * m_top_percentage; i--)
     {
         // respawn close to current best
-        if(i < m_pose_samples.size() * m_close_respawn_percentage)
+        if(i > m_pose_samples.size() * (1 - m_close_respawn_percentage))
         {
-            int idx = (int)((double)rand() / RAND_MAX * idx);
+            std::cout << i << " c, ";
+            int idx = (int)((double)rand() / RAND_MAX * top_values_last);
             geometry_msgs::Pose n_pose = m_factory->generate_pose_near(m_pose_samples[idx].get_pose());
             m_pose_samples[i].set_pose(n_pose);
             m_pose_samples[i].set_probability(1.0 / m_sample_number);
             m_poses.poses[i] = m_pose_samples[i].get_pose();
         }
         // respawn random samples and improbable poses
-        else if(i < m_pose_samples.size() * m_discard_percentage || m_pose_samples[i].get_probability() < m_low_threshold)
+        else if(i > m_pose_samples.size() * m_discard_percentage || m_pose_samples[i].get_probability() < m_low_threshold)
         {
+            std::cout << i << " r, ";
             m_pose_samples[i].set_pose(m_factory->generate_random_pose());
             m_pose_samples[i].set_probability(1.0 / m_sample_number);
             m_poses.poses[i] = m_pose_samples[i].get_pose();
@@ -189,7 +196,7 @@ void amcl6d::update_poses()
 
     m_iterations++;
     std::cout << "Iterations: " << m_iterations << std::endl;
-    std::cout << "Best guess: " << m_pose_samples[0].get_pose() << std::endl;
+    std::cout << "Best guess ("<< m_pose_samples[0].get_probability() << "): "  << m_pose_samples[0].get_pose() << std::endl;
 
     m_has_guess = true;
     m_moved = true;
@@ -222,7 +229,7 @@ double amcl6d::evaluate_sample(pose_sample sample)
     sensor_msgs::PointCloud pcl = sample.get_raytrace();
     if(pcl.points.size() == 0)
     {
-        return 0;
+        return 1e10;
     }
 
     for(int i = 0; i < pcl.points.size(); ++i)
