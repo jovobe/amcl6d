@@ -212,7 +212,7 @@ sensor_msgs::PointCloud amcl6d::issue_raytrace(geometry_msgs::Pose pose)
 double amcl6d::evaluate_sample(pose_sample sample)
 {
     // TODO make K a configurable member or something
-    int k = 8;
+    int k = 1;
     double result = 0;
 
     std::vector<float> dst(k);
@@ -241,13 +241,8 @@ double amcl6d::evaluate_sample(pose_sample sample)
         }
         result += avg;
     }
-    result /= pcl.points.size();
 
-    // TODO normalize data (e.g. by sensor range?) and invert it, improve sensor_range
-    double sensor_range = m_factory->get_maximum_distance();
-    double n_result = result > sensor_range? 0 : 1 - result / sensor_range;
-
-    return n_result;
+    return result;
 }
 
 bool amcl6d::prepare_kd_tree()
@@ -300,8 +295,7 @@ void amcl6d::generate_poses()
         m_pose_samples[i].set_probability(1.0 / m_sample_number);
         m_poses.poses[i] = m_pose_samples[i].get_pose();
     }
-    // TODO DEBUG
-    m_pose_samples[0].update_pose(0, 0, 0, Eigen::Quaterniond(1, 0, 0, 0));
+
     init_mu();
     init_covariance();
     Logger::instance()->logX("sis","[AMCL]", m_sample_number, "poses generated.");
