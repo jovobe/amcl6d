@@ -59,7 +59,6 @@ void amcl6d::publish()
 
 void amcl6d::spinOnce()
 {
-    // TODO: block this while updating
     m_queue->callOne();
 }
 
@@ -145,7 +144,6 @@ void amcl6d::update_poses()
     std::cout << std::endl;
     /**/
 
-    // TODO particle regeneration
     // sort particles by posterior probability
     std::sort(m_pose_samples.begin(), m_pose_samples.end(), [](pose_sample left, pose_sample right){ return left.get_probability() > right.get_probability(); });
     
@@ -218,7 +216,6 @@ sensor_msgs::PointCloud amcl6d::issue_raytrace(geometry_msgs::Pose pose)
 
 double amcl6d::evaluate_sample(pose_sample sample)
 {
-    // TODO make K a configurable member or something
     int k = 1;
     double result = 0;
 
@@ -248,6 +245,7 @@ double amcl6d::evaluate_sample(pose_sample sample)
         }
         result += avg;
     }
+    result /= pcl.points.size();
 
     return result;
 }
