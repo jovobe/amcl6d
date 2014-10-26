@@ -71,6 +71,8 @@ private:
     sensor_msgs::PointCloud issue_raytrace(geometry_msgs::Pose pose);
     double evaluate_sample(pose_sample sample);
 
+    void kd_tree(pose_sample pose, pcl::KdTreeFLANN<pcl::PointXYZ>* tree);
+
     Eigen::Vector6d m_mu;
     Eigen::Matrix6d m_covar;
     Eigen::Matrix6d m_cholesky_decomp;
