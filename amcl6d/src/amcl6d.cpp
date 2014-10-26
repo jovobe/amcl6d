@@ -6,7 +6,7 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle, ros::CallbackQueue* queue)
     
     m_node_handle           = nodehandle;
     m_queue                 = queue;
-    m_sample_number         = 100;
+    m_sample_number         = 1;
     m_pose_publisher        = m_node_handle.advertise<geometry_msgs::PoseArray>("pose_samples", 1000);
     m_best_pose_publisher   = m_node_handle.advertise<geometry_msgs::PoseStamped>("pose_hypothesis", 1000);
     m_poses.header.frame_id = m_current_best_pose.header.frame_id = "world";
@@ -87,7 +87,7 @@ void amcl6d::update_poses()
                                        sample_pose.orientation.y,
                                        sample_pose.orientation.z);
         
-        Eigen::Quaterniond n_orientation = m_diff_orientation * orientation;
+        Eigen::Quaterniond n_orientation = m_diff_orientation.inverse() * orientation;
         
         Eigen::Quaterniond rotZ(Eigen::AngleAxisd(noise(3), Eigen::Vector3d::UnitZ()));
         Eigen::Quaterniond rotY(Eigen::AngleAxisd(noise(4), Eigen::Vector3d::UnitY()));
@@ -310,6 +310,8 @@ void amcl6d::generate_poses()
 
 Eigen::Vector6d amcl6d::sample()
 {
+    bool no_noise = true;
+
     Eigen::Vector6d values;
     values << m_distribution(m_generator), 
               m_distribution(m_generator),
@@ -319,7 +321,11 @@ Eigen::Vector6d amcl6d::sample()
               m_distribution(m_generator);
     
     Eigen::Vector6d result = m_cholesky_decomp.transpose() * values + m_mu;
-
+    
+    if(no_noise)
+    {
+        result << 0, 0, 0, 0, 0, 0;
+    }
     return result;
 }
 
@@ -406,8 +412,8 @@ void amcl6d::move_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
 
     // if there is a difference, provide an update
     double diff = m_diff_orientation.vec().squaredNorm() + m_diff_position.squaredNorm();
-
-    if(diff > 0 && m_moved)
+    // threshold
+    if(diff > 1e-8 && m_moved)
     {
         Logger::instance()->log("[AMCL] Move registered.");
         update_poses();
