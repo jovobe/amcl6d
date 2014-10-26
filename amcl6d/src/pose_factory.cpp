@@ -43,7 +43,7 @@ void pose_factory::set_bounds(amcl6d_tools::Mesh mesh)
 
 geometry_msgs::Pose pose_factory::generate_random_pose() 
 {
-    bool gen_zero_pose = true;
+    bool gen_zero_pose = false;
 
     geometry_msgs::Pose pose;
     pose.position.x = gen_zero_pose? 0 : m_min_x + (double) rand() / RAND_MAX * (m_max_x - m_min_x);

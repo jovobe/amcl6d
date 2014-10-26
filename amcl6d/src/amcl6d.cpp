@@ -6,7 +6,7 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle, ros::CallbackQueue* queue)
     
     m_node_handle           = nodehandle;
     m_queue                 = queue;
-    m_sample_number         = 1;
+    m_sample_number         = 100;
     m_pose_publisher        = m_node_handle.advertise<geometry_msgs::PoseArray>("pose_samples", 1000);
     m_best_pose_publisher   = m_node_handle.advertise<geometry_msgs::PoseStamped>("pose_hypothesis", 1000);
     m_poses.header.frame_id = m_current_best_pose.header.frame_id = "world";
@@ -218,9 +218,10 @@ sensor_msgs::PointCloud amcl6d::issue_raytrace(geometry_msgs::Pose pose)
 
 double amcl6d::evaluate_sample(pose_sample sample)
 {
-    // TODO make K a configurable member or something
     int k = 1;
-    double result = 0;
+
+    // avoid -nan with threshold
+    double result = 1e-8;
 
     std::vector<float> dst(k);
     dst.reserve(k);
@@ -310,7 +311,7 @@ void amcl6d::generate_poses()
 
 Eigen::Vector6d amcl6d::sample()
 {
-    bool no_noise = true;
+    bool no_noise = false;
 
     Eigen::Vector6d values;
     values << m_distribution(m_generator), 
