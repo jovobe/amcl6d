@@ -43,10 +43,12 @@ void pose_factory::set_bounds(amcl6d_tools::Mesh mesh)
 
 geometry_msgs::Pose pose_factory::generate_random_pose() 
 {
+    bool gen_zero_pose = true;
+
     geometry_msgs::Pose pose;
-    pose.position.x = m_min_x + (double) rand() / RAND_MAX * (m_max_x - m_min_x);
-    pose.position.y = m_min_y + (double) rand() / RAND_MAX * (m_max_y - m_min_y);
-    pose.position.z = m_min_z + (double) rand() / RAND_MAX * (m_max_z - m_min_z);
+    pose.position.x = gen_zero_pose? 0 : m_min_x + (double) rand() / RAND_MAX * (m_max_x - m_min_x);
+    pose.position.y = gen_zero_pose? 0 : m_min_y + (double) rand() / RAND_MAX * (m_max_y - m_min_y);
+    pose.position.z = gen_zero_pose? 0 : m_min_z + (double) rand() / RAND_MAX * (m_max_z - m_min_z);
 
     // quaternion sampling after K. Shoemake
     double u_1 = (double) rand() / RAND_MAX;
@@ -56,10 +58,10 @@ geometry_msgs::Pose pose_factory::generate_random_pose()
     double s_2 = sqrt(u_1);
     double p_1 = 2 * M_PI * u_2;
     double p_2 = 2 * M_PI * u_3;
-    pose.orientation.x = s_1 * sin(p_1);
-    pose.orientation.y = s_1 * cos(p_1);
-    pose.orientation.z = s_2 * sin(p_2);
-    pose.orientation.w = s_2 * cos(p_2);
+    pose.orientation.x = gen_zero_pose? 0 : s_1 * sin(p_1);
+    pose.orientation.y = gen_zero_pose? 0 : s_1 * cos(p_1);
+    pose.orientation.z = gen_zero_pose? 0 : s_2 * sin(p_2);
+    pose.orientation.w = gen_zero_pose? 1 : s_2 * cos(p_2);
 
     return pose;
 }
