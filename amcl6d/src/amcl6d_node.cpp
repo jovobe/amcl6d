@@ -8,6 +8,26 @@
 #include "amcl6d_tools/Mesh.h"
 #include "amcl6d_tools/Logger.h"
 
+/* 
+   Dear future self, 
+   sorry for this, but I need to finish this thesis.
+   Maybe you are able to fix this.
+
+   These three defines are a workaround to avoid the EIGEN assertion 
+   which is described here:
+   http://eigen.tuxfamily.org/dox-devel/TopicUnalignedArrayAssert.html
+
+   However, it doesn't always work, but running the program again and
+   again seems to yield to a success. It's annoying, but I have neither 
+   a clue nor time anymore.
+   
+   It breaks on the constructor call in the main:
+   amcl6d_node::amcl = new amcl6d(nodehandle, &move_queue).
+*/
+#define EIGEN_DONT_ALIGN_STATICALLY
+#define EIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT
+#define EIGEN_DONT_VECTORIZE
+
 namespace amcl6d_node {
     amcl6d* amcl = NULL;
 
@@ -23,7 +43,7 @@ namespace amcl6d_node {
         ros::shutdown();
     }
 }
-#include <iostream>
+
 int main(int argc, char** args) 
 {
     ros::init(argc, args, "amcl6d");

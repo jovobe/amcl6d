@@ -86,7 +86,7 @@ void amcl6d::update_poses()
                                        sample_pose.orientation.y,
                                        sample_pose.orientation.z);
         
-        Eigen::Quaterniond n_orientation = m_diff_orientation * orientation;
+        Eigen::Quaterniond n_orientation = m_diff_orientation.inverse() * orientation;
         
         Eigen::Quaterniond rotZ(Eigen::AngleAxisd(noise(3), Eigen::Vector3d::UnitZ()));
         Eigen::Quaterniond rotY(Eigen::AngleAxisd(noise(4), Eigen::Vector3d::UnitY()));
@@ -216,15 +216,28 @@ sensor_msgs::PointCloud amcl6d::issue_raytrace(geometry_msgs::Pose pose)
 
 double amcl6d::evaluate_sample(pose_sample sample)
 {
+    bool kd_tree_from_sample = true;
+    pcl::KdTreeFLANN<pcl::PointXYZ> s_kd_tree = pcl::KdTreeFLANN<pcl::PointXYZ>(false);
+
+    if(kd_tree_from_sample)
+    {
+        if(sample.get_raytrace().points.size() == 0) return 1e10;
+
+        kd_tree(sample, &s_kd_tree);
+    }
+
     int k = 1;
-    double result = 0;
+
+    // avoid -nan with threshold
+    double result = 1e-8;
 
     std::vector<float> dst(k);
     dst.reserve(k);
     std::vector<int> ind(k);
     ind.reserve(k);
-    sensor_msgs::PointCloud pcl = sample.get_raytrace();
-    if(pcl.points.size() == 0)
+    sensor_msgs::PointCloud pcl = (kd_tree_from_sample? m_current_pose : sample).get_raytrace();
+
+    if((kd_tree_from_sample? sample : m_current_pose).get_raytrace().points.size() == 0)
     {
         return 1e10;
     }
@@ -237,7 +250,7 @@ double amcl6d::evaluate_sample(pose_sample sample)
         pt.x = pcl.points[i].x;
         pt.y = pcl.points[i].y;
         pt.z = pcl.points[i].z;
-        int neighbours = m_kd_tree.nearestKSearch(pt, k, ind, dst);
+        int neighbours = (kd_tree_from_sample? s_kd_tree : m_kd_tree).nearestKSearch(pt, k, ind, dst);
         double avg = 0;
         for(int j = 0; j < neighbours; ++j)
         {
@@ -246,6 +259,7 @@ double amcl6d::evaluate_sample(pose_sample sample)
         result += avg;
     }
     result /= pcl.points.size();
+
 
     return result;
 }
@@ -280,6 +294,29 @@ bool amcl6d::prepare_kd_tree()
     return true;
 }
 
+void amcl6d::kd_tree(pose_sample pose, pcl::KdTreeFLANN<pcl::PointXYZ>* tree) 
+{
+    // set up different clouds
+    sensor_msgs::PointCloud points;
+    sensor_msgs::PointCloud2 points2;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr ptr(new pcl::PointCloud<pcl::PointXYZ>);
+
+    // fill first cloud with the data
+    points.points = pose.get_raytrace().points;
+    if(points.points.size() == 0) 
+    {
+        Logger::instance()->log("[AMCL] No sensor input available. Move along. (Aborting.)");
+        return;
+    }
+
+    // convert through
+    sensor_msgs::convertPointCloudToPointCloud2(points, points2);
+    pcl::fromROSMsg(points2, *(ptr.get()));
+
+    // set up kd_tree
+    tree->setInputCloud(ptr);
+}
+
 void amcl6d::generate_poses()
 {
     Logger::instance()->log("[AMCL] Generating poses...");
@@ -308,6 +345,8 @@ void amcl6d::generate_poses()
 
 Eigen::Vector6d amcl6d::sample()
 {
+    bool no_noise = false;
+
     Eigen::Vector6d values;
     values << m_distribution(m_generator), 
               m_distribution(m_generator),
@@ -317,7 +356,11 @@ Eigen::Vector6d amcl6d::sample()
               m_distribution(m_generator);
     
     Eigen::Vector6d result = m_cholesky_decomp.transpose() * values + m_mu;
-
+    
+    if(no_noise)
+    {
+        result << 0, 0, 0, 0, 0, 0;
+    }
     return result;
 }
 
@@ -404,8 +447,8 @@ void amcl6d::move_callback(const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
 
     // if there is a difference, provide an update
     double diff = m_diff_orientation.vec().squaredNorm() + m_diff_position.squaredNorm();
-
-    if(diff > 0 && m_moved)
+    // threshold
+    if(diff > 1e-8 && m_moved)
     {
         Logger::instance()->log("[AMCL] Move registered.");
         update_poses();

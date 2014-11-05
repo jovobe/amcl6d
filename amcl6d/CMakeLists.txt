@@ -45,7 +45,7 @@ include_directories(
 )
 
 # add c++11 support + set -frounding-math for CGAL
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -frounding-math")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -frounding-math -g")
 
 # for gdb
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
