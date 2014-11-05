@@ -171,7 +171,6 @@ void amcl6d::update_poses()
         // respawn close to current best
         if(i > m_pose_samples.size() * (1 - m_close_respawn_percentage))
         {
-            std::cout << i << " c, ";
             int idx = (int)((double)rand() / RAND_MAX * top_values_last);
             geometry_msgs::Pose n_pose = m_factory->generate_pose_near(m_pose_samples[idx].get_pose());
             m_pose_samples[i].set_pose(n_pose);
@@ -181,7 +180,6 @@ void amcl6d::update_poses()
         // respawn random samples and improbable poses
         else if(i > m_pose_samples.size() * m_discard_percentage || m_pose_samples[i].get_probability() < m_low_threshold)
         {
-            std::cout << i << " r, ";
             m_pose_samples[i].set_pose(m_factory->generate_random_pose());
             m_pose_samples[i].set_probability(1.0 / m_sample_number);
             m_poses.poses[i] = m_pose_samples[i].get_pose();
