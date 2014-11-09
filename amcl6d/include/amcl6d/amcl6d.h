@@ -33,6 +33,7 @@
 #include <mutex>
 #include <thread>
 #include <algorithm>
+#include <fstream>
 
 namespace Eigen 
 {
@@ -85,6 +86,7 @@ private:
     std::vector<pose_sample> m_pose_samples;
 
     ros::Publisher m_pose_publisher;
+    ros::Publisher m_current_pose_publisher;
     ros::Publisher m_best_pose_publisher;
 
     amcl6d_tools::Mesh m_mesh;
@@ -118,6 +120,13 @@ private:
     int m_iterations;
 
     geometry_msgs::PoseStamped m_current_best_pose;
+
+    // STATISTICS
+    double m_total_time, m_total_raytrace_time;
+
+    double m_shortest_dist_dist, m_shortest_dist_orient, m_shortest_dist_iter;
+    double m_shortest_orient_dist, m_shortest_orient_orient, m_shortest_orient_iter;
+    
 };
 
 #endif

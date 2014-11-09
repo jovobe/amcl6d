@@ -9,6 +9,7 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle, ros::CallbackQueue* queue)
     m_sample_number         = 100;
     m_pose_publisher        = m_node_handle.advertise<geometry_msgs::PoseArray>("pose_samples", 1000);
     m_best_pose_publisher   = m_node_handle.advertise<geometry_msgs::PoseStamped>("pose_hypothesis", 1000);
+    m_current_pose_publisher= m_node_handle.advertise<geometry_msgs::PoseStamped>("pose_checked", 1000);
     m_poses.header.frame_id = m_current_best_pose.header.frame_id = "world";
     m_moved                 = false;
     m_has_guess             = false;
@@ -17,8 +18,8 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle, ros::CallbackQueue* queue)
     m_service_client        = m_node_handle.serviceClient<cgal_raytracer::RaytraceAtPose>("raytrace_at_pose");
 
     // TODO tweak params
-    m_discard_percentage        = 0.4;
-    m_close_respawn_percentage  = 0.25;
+    m_discard_percentage        = 0.60;
+    m_close_respawn_percentage  = 0.30;
     m_top_percentage            = 0.1;
     m_low_threshold             = 0.0005;
 
@@ -28,6 +29,12 @@ amcl6d::amcl6d(ros::NodeHandle nodehandle, ros::CallbackQueue* queue)
     Logger::instance()->logX("si", "[AMCL]   Sample number:  ", m_sample_number);
     Logger::instance()->logX("ss", "[AMCL]   Frame:          ", m_poses.header.frame_id.c_str());
     Logger::instance()->logX("ss", "[AMCL]   PoseArray topic:", "pose_samples");
+
+    m_total_time = m_total_raytrace_time = 0;
+    m_shortest_dist_dist = m_shortest_dist_orient = 1e6;
+    m_shortest_dist_iter = -1;
+    m_shortest_orient_dist = m_shortest_orient_orient = 1e6; 
+    m_shortest_orient_iter = -1;
 }
 
 amcl6d::~amcl6d() {
@@ -55,6 +62,10 @@ void amcl6d::publish()
     {
         m_best_pose_publisher.publish(m_current_best_pose);
     }
+    geometry_msgs::PoseStamped cur_pose;
+    cur_pose.header.frame_id = "world";
+    cur_pose.pose = m_current_pose.get_pose();
+    m_current_pose_publisher.publish(cur_pose);
 }
 
 void amcl6d::spinOnce()
@@ -65,6 +76,7 @@ void amcl6d::spinOnce()
 #include <iostream>
 void amcl6d::update_poses()
 {
+    ros::Time update_time_start = ros::Time::now();
     // get current raytrace // TODO get from robot
     m_current_pose.set_raytrace(issue_raytrace(m_current_pose.get_pose()));
     m_current_pose.normalize_raytrace();
@@ -119,6 +131,7 @@ void amcl6d::update_poses()
             m_pose_samples[i].set_likelihood(likelihood);
         }
     }
+    double rt_diff = ros::Duration(ros::Time::now() - now).toSec();
     Logger::instance()->logX("sds", "[AMCL] Raytraces done. Time elapsed:", ros::Duration(ros::Time::now() - now).toSec(), "s.");
     
     // find normalization factor (marginalize over likelihoods)
@@ -154,7 +167,7 @@ void amcl6d::update_poses()
         //std::cout << m_pose_samples[i].get_probability() << ", " << std::endl;
     }
 
-    std::cout << "Posterior sum: " << sum << std::endl;
+ //   std::cout << "Posterior sum: " << sum << std::endl;
 
     m_current_best_pose.pose = m_pose_samples[0].get_pose();
 
@@ -171,6 +184,7 @@ void amcl6d::update_poses()
         // respawn close to current best
         if(i > m_pose_samples.size() * (1 - m_close_respawn_percentage))
         {
+//            std::cout << i << " c, ";
             int idx = (int)((double)rand() / RAND_MAX * top_values_last);
             geometry_msgs::Pose n_pose = m_factory->generate_pose_near(m_pose_samples[idx].get_pose());
             m_pose_samples[i].set_pose(n_pose);
@@ -180,6 +194,7 @@ void amcl6d::update_poses()
         // respawn random samples and improbable poses
         else if(i > m_pose_samples.size() * m_discard_percentage || m_pose_samples[i].get_probability() < m_low_threshold)
         {
+//            std::cout << i << " r, ";
             m_pose_samples[i].set_pose(m_factory->generate_random_pose());
             m_pose_samples[i].set_probability(1.0 / m_sample_number);
             m_poses.poses[i] = m_pose_samples[i].get_pose();
@@ -190,9 +205,61 @@ void amcl6d::update_poses()
         }
     }
 
+    // FROM HERE ON STATISTICS ONLY
     m_iterations++;
     std::cout << "Iterations: " << m_iterations << std::endl;
     std::cout << "Best guess ("<< m_pose_samples[0].get_probability() << "): "  << m_pose_samples[0].get_pose() << std::endl;
+    std::cout << "Checked pose: " << m_current_pose.get_pose() << std::endl;
+    double position_distance = sqrt( (m_current_pose.get_pose().position.x - m_pose_samples[0].get_pose().position.x) 
+                                   * (m_current_pose.get_pose().position.x - m_pose_samples[0].get_pose().position.x) 
+                                   + (m_current_pose.get_pose().position.y - m_pose_samples[0].get_pose().position.y) 
+                                   * (m_current_pose.get_pose().position.y - m_pose_samples[0].get_pose().position.y)  
+                                   + (m_current_pose.get_pose().position.z - m_pose_samples[0].get_pose().position.z) 
+                                   * (m_current_pose.get_pose().position.z - m_pose_samples[0].get_pose().position.z) );
+    double scalar = m_current_pose.get_pose().orientation.x * m_pose_samples[0].get_pose().orientation.x
+                  + m_current_pose.get_pose().orientation.y * m_pose_samples[0].get_pose().orientation.y
+                  + m_current_pose.get_pose().orientation.z * m_pose_samples[0].get_pose().orientation.z
+                  + m_current_pose.get_pose().orientation.w * m_pose_samples[0].get_pose().orientation.w;
+
+    double orientation_distance = acos(2 * scalar * scalar - 1);
+
+    ros::Time end_time = ros::Time::now();
+
+    std::cout << "Distance:" << std::endl << "  Position:    " << position_distance << std::endl << "  Orientation: " << orientation_distance << std::endl
+              << "   Total:      " << position_distance + orientation_distance << std::endl;
+
+    Logger::instance()->logX("sds", "[AMCL] Update done. Time elapsed:", ros::Duration(end_time - update_time_start).toSec(), "s.");
+
+    double time_diff = ros::Duration(end_time - update_time_start).toSec();
+    m_total_time += time_diff;
+    m_total_raytrace_time += rt_diff;
+
+    if(position_distance < m_shortest_dist_dist)
+    {
+        m_shortest_dist_dist   = position_distance;
+        m_shortest_dist_orient = orientation_distance;
+        m_shortest_dist_iter   = m_iterations;
+    }
+    if(orientation_distance < m_shortest_orient_orient)
+    {
+        m_shortest_orient_dist   = position_distance;
+        m_shortest_orient_orient = orientation_distance;
+        m_shortest_orient_iter   = m_iterations;
+    }
+    std::cout << "Total time:    " << m_total_time << " s (Average: " << m_total_time / m_iterations << ")" << std::endl;
+    std::cout << "Total RT time: " << m_total_raytrace_time << " s (Average: " << m_total_raytrace_time / m_iterations << ")" << std::endl;
+    std::cout << "Shortest distance:    " << m_shortest_dist_dist << " , " << m_shortest_dist_orient << " iter: " << m_shortest_dist_iter << std::endl;
+    std::cout << "Shortest Orientation: " << m_shortest_orient_dist << " , " << m_shortest_orient_orient << " iter: " << m_shortest_orient_iter << std::endl;
+    std::ofstream file("/home/fae/results.txt", std::ios::app);
+    if(!file.is_open()) 
+    {
+      std::cout << "Can't open File!" << std::endl;
+    }
+    file << m_iterations << " , " << position_distance << " , "<< orientation_distance << " , " 
+         << time_diff << " , " << rt_diff << " , " 
+         << m_total_time << " , " << m_total_raytrace_time 
+         << std::endl;
+    file.close();
 
     m_has_guess = true;
     m_moved = true;
